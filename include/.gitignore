@@ -1,5 +1,8 @@
 build/
 bin/
+obj/
 *.exe
 *.o
 results/*.json
+*.log
+.vscode/
