@@ -375,6 +375,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\main.cpp" />
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\stream_sweep.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

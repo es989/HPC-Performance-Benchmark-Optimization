@@ -4,6 +4,9 @@
     <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\stream_sweep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\CMakeLists.txt" />

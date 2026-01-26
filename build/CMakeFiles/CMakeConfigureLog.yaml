@@ -5,7 +5,7 @@ events:
     kind: "message-v1"
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:212 (message)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       The system is: Windows - 10.0.26100 - AMD64
   -
@@ -16,7 +16,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "file"
     variable: "src_in"
     description: "Path to a file."
@@ -59,7 +59,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:122 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
       Compiler:  
@@ -71,7 +71,7 @@ events:
       Microsoft (R) Build Engine version 16.11.2+f32259642 for .NET Framework
       Copyright (C) Microsoft Corporation. All rights reserved.
       
-      Build started 25/01/2026 08:38:19.
+      Build started 26/01/2026 20:32:34.
       Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\4.2.2\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
       PrepareForBuild:
         Creating directory "Debug\\".
@@ -97,7 +97,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:01.13
+      Time Elapsed 00:00:01.56
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -114,7 +114,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:103 (__resolve_linker_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "_CMAKE_TOOL_WITH_PATH"
     description: "Path to a program."
@@ -178,7 +178,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:104 (__resolve_linker_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "_CMAKE_TOOL_WITH_PATH"
     description: "Path to a program."
@@ -296,7 +296,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "CMAKE_LINKER"
     description: "Path to a program."
@@ -358,7 +358,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "CMAKE_MT"
     description: "Path to a program."
@@ -476,7 +476,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "CMAKE_AR"
     description: "Path to a program."
@@ -541,7 +541,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:8 (CMAKE_DETERMINE_COMPILER_ID_BUILD)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "file"
     variable: "src_in"
     description: "Path to a file."
@@ -584,7 +584,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:125 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
       Compiler:  
@@ -596,7 +596,7 @@ events:
       Microsoft (R) Build Engine version 16.11.2+f32259642 for .NET Framework
       Copyright (C) Microsoft Corporation. All rights reserved.
       
-      Build started 25/01/2026 08:38:21.
+      Build started 26/01/2026 20:32:36.
       Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\4.2.2\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
       PrepareForBuild:
         Creating directory "Debug\\".
@@ -622,7 +622,7 @@ events:
           0 Warning(s)
           0 Error(s)
       
-      Time Elapsed 00:00:00.96
+      Time Elapsed 00:00:01.03
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -639,7 +639,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:65 (__resolve_tool_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:104 (__resolve_linker_path)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCXXCompiler.cmake:206 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "_CMAKE_TOOL_WITH_PATH"
     description: "Path to a program."
@@ -760,7 +760,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC.cmake:553 (__windows_compiler_msvc_enable_rc)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/Platform/Windows-MSVC-C.cmake:5 (__windows_compiler_msvc)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeCInformation.cmake:48 (include)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     mode: "program"
     variable: "CMAKE_RC_COMPILER"
     description: "RC compiler"
@@ -928,12 +928,12 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-rr0dvm"
-      binary: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-rr0dvm"
+      source: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-d4drqg"
+      binary: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-d4drqg"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -942,38 +942,38 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-rr0dvm'
+        Change Dir: 'C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-d4drqg'
         
-        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" cmTC_d8a7a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" cmTC_5794a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
         Microsoft (R) Build Engine version 16.11.2+f32259642 for .NET Framework
         Copyright (C) Microsoft Corporation. All rights reserved.
         
-        Build started 25/01/2026 08:38:23.
-        Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rr0dvm\\cmTC_d8a7a.vcxproj" on node 1 (default targets).
+        Build started 26/01/2026 20:32:38.
+        Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-d4drqg\\cmTC_5794a.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rr0dvm\\Debug\\".
-          Creating directory "cmTC_d8a7a.dir\\Debug\\cmTC_d8a7a.tlog\\".
+          Creating directory "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-d4drqg\\Debug\\".
+          Creating directory "cmTC_5794a.dir\\Debug\\cmTC_5794a.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_d8a7a.dir\\Debug\\cmTC_d8a7a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Creating "cmTC_5794a.dir\\Debug\\cmTC_5794a.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
         ClCompile:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_d8a7a.dir\\Debug\\\\" /Fd"cmTC_d8a7a.dir\\Debug\\vc142.pdb" /external:W3 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_5794a.dir\\Debug\\\\" /Fd"cmTC_5794a.dir\\Debug\\vc142.pdb" /external:W3 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.29.30153 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
           CMakeCCompilerABI.c
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_d8a7a.dir\\Debug\\\\" /Fd"cmTC_d8a7a.dir\\Debug\\vc142.pdb" /external:W3 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /Fo"cmTC_5794a.dir\\Debug\\\\" /Fd"cmTC_5794a.dir\\Debug\\vc142.pdb" /external:W3 /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCCompilerABI.c"
         Link:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rr0dvm\\Debug\\cmTC_d8a7a.exe" /INCREMENTAL /ILK:"cmTC_d8a7a.dir\\Debug\\cmTC_d8a7a.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-rr0dvm/Debug/cmTC_d8a7a.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-rr0dvm/Debug/cmTC_d8a7a.lib" /MACHINE:X64  /machine:x64 cmTC_d8a7a.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_d8a7a.vcxproj -> C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rr0dvm\\Debug\\cmTC_d8a7a.exe
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-d4drqg\\Debug\\cmTC_5794a.exe" /INCREMENTAL /ILK:"cmTC_5794a.dir\\Debug\\cmTC_5794a.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-d4drqg/Debug/cmTC_5794a.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-d4drqg/Debug/cmTC_5794a.lib" /MACHINE:X64  /machine:x64 cmTC_5794a.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_5794a.vcxproj -> C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-d4drqg\\Debug\\cmTC_5794a.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_d8a7a.dir\\Debug\\cmTC_d8a7a.tlog\\unsuccessfulbuild".
-          Touching "cmTC_d8a7a.dir\\Debug\\cmTC_d8a7a.tlog\\cmTC_d8a7a.lastbuildstate".
-        Done Building Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-rr0dvm\\cmTC_d8a7a.vcxproj" (default targets).
+          Deleting file "cmTC_5794a.dir\\Debug\\cmTC_5794a.tlog\\unsuccessfulbuild".
+          Touching "cmTC_5794a.dir\\Debug\\cmTC_5794a.tlog\\cmTC_5794a.lastbuildstate".
+        Done Building Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-d4drqg\\cmTC_5794a.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:00.92
+        Time Elapsed 00:00:00.96
         
       exitCode: 0
   -
@@ -981,7 +981,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
@@ -999,7 +999,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Running the C compiler's linker: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe" "-v"
       Microsoft (R) Incremental Linker Version 14.29.30153.0
@@ -1009,12 +1009,12 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-dfmeeu"
-      binary: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-dfmeeu"
+      source: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-thmpde"
+      binary: "C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-thmpde"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -1024,38 +1024,38 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-dfmeeu'
+        Change Dir: 'C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-thmpde'
         
-        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" cmTC_05476.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
+        Run Build Command(s): "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/MSBuild/Current/Bin/MSBuild.exe" cmTC_6508d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=16.0 /v:n
         Microsoft (R) Build Engine version 16.11.2+f32259642 for .NET Framework
         Copyright (C) Microsoft Corporation. All rights reserved.
         
-        Build started 25/01/2026 08:38:24.
-        Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dfmeeu\\cmTC_05476.vcxproj" on node 1 (default targets).
+        Build started 26/01/2026 20:32:40.
+        Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-thmpde\\cmTC_6508d.vcxproj" on node 1 (default targets).
         PrepareForBuild:
-          Creating directory "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dfmeeu\\Debug\\".
-          Creating directory "cmTC_05476.dir\\Debug\\cmTC_05476.tlog\\".
+          Creating directory "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-thmpde\\Debug\\".
+          Creating directory "cmTC_6508d.dir\\Debug\\cmTC_6508d.tlog\\".
         InitializeBuildStatus:
-          Creating "cmTC_05476.dir\\Debug\\cmTC_05476.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
+          Creating "cmTC_6508d.dir\\Debug\\cmTC_6508d.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
         ClCompile:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_05476.dir\\Debug\\\\" /Fd"cmTC_05476.dir\\Debug\\vc142.pdb" /external:W3 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_6508d.dir\\Debug\\\\" /Fd"cmTC_6508d.dir\\Debug\\vc142.pdb" /external:W3 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
           Microsoft (R) C/C++ Optimizing Compiler Version 19.29.30153 for x64
           Copyright (C) Microsoft Corporation.  All rights reserved.
           CMakeCXXCompilerABI.cpp
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_05476.dir\\Debug\\\\" /Fd"cmTC_05476.dir\\Debug\\vc142.pdb" /external:W3 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D _MBCS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GR /Fo"cmTC_6508d.dir\\Debug\\\\" /Fd"cmTC_6508d.dir\\Debug\\vc142.pdb" /external:W3 /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-4.2\\Modules\\CMakeCXXCompilerABI.cpp"
         Link:
-          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dfmeeu\\Debug\\cmTC_05476.exe" /INCREMENTAL /ILK:"cmTC_05476.dir\\Debug\\cmTC_05476.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-dfmeeu/Debug/cmTC_05476.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-dfmeeu/Debug/cmTC_05476.lib" /MACHINE:X64  /machine:x64 cmTC_05476.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_05476.vcxproj -> C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dfmeeu\\Debug\\cmTC_05476.exe
+          C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\bin\\HostX64\\x64\\link.exe /OUT:"C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-thmpde\\Debug\\cmTC_6508d.exe" /INCREMENTAL /ILK:"cmTC_6508d.dir\\Debug\\cmTC_6508d.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-thmpde/Debug/cmTC_6508d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /IMPLIB:"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/CMakeScratch/TryCompile-thmpde/Debug/cmTC_6508d.lib" /MACHINE:X64  /machine:x64 cmTC_6508d.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_6508d.vcxproj -> C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-thmpde\\Debug\\cmTC_6508d.exe
         FinalizeBuildStatus:
-          Deleting file "cmTC_05476.dir\\Debug\\cmTC_05476.tlog\\unsuccessfulbuild".
-          Touching "cmTC_05476.dir\\Debug\\cmTC_05476.tlog\\cmTC_05476.lastbuildstate".
-        Done Building Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-dfmeeu\\cmTC_05476.vcxproj" (default targets).
+          Deleting file "cmTC_6508d.dir\\Debug\\cmTC_6508d.tlog\\unsuccessfulbuild".
+          Touching "cmTC_6508d.dir\\Debug\\cmTC_6508d.tlog\\cmTC_6508d.lastbuildstate".
+        Done Building Project "C:\\HPCProject\\HPC-Performance-Benchmark-Optimization\\build\\CMakeFiles\\CMakeScratch\\TryCompile-thmpde\\cmTC_6508d.vcxproj" (default targets).
         
         Build succeeded.
             0 Warning(s)
             0 Error(s)
         
-        Time Elapsed 00:00:01.04
+        Time Elapsed 00:00:00.85
         
       exitCode: 0
   -
@@ -1063,7 +1063,7 @@ events:
     backtrace:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:253 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
@@ -1081,7 +1081,7 @@ events:
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/Internal/CMakeDetermineLinkerId.cmake:38 (message)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeDetermineCompilerABI.cmake:299 (cmake_determine_linker_id)"
       - "C:/Program Files/CMake/share/cmake-4.2/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:5 (project)"
+      - "CMakeLists.txt:9 (project)"
     message: |
       Running the CXX compiler's linker: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30133/bin/HostX64/x64/link.exe" "-v"
       Microsoft (R) Incremental Linker Version 14.29.30153.0
