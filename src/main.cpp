@@ -1,22 +1,39 @@
-#include <iostream>
 #include "config.hpp"
 #include "results.hpp"
+#include <iostream>
+#include <string>
+
+// חובה לכלול את זה כדי להכיר את StreamOp
+#include "stream_kernels.hpp"
+
+// הצהרה על הפונקציה שנמצאת ב-stream_sweep.cpp
+void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op);
 
 int main(int argc, char** argv) {
-    // 1. קריאת הגדרות
     Config conf = parse_args(argc, argv);
-    conf.print();
-
-    // 2. יצירת אובייקט תוצאות והזנת נתוני דמה
     BenchmarkResult res;
-    res.total_ns = 5000000000; // 5 שניות
-    res.avg_ns = 12.5;
-    res.bandwidth_gb_s = 64.2;
-    res.gflops = 120.5;
 
-    // 3. שמירה
-    std::cout << "\nTesting JSON Export...\n";
+    std::cout << "--- Starting Benchmark: " << conf.kernel << " ---\n";
+
+    // תמיכה גם בשמות קצרים וגם בארוכים
+    if (conf.kernel == "copy" || conf.kernel == "stream_copy") {
+        run_stream_sweep(conf, res, StreamOp::Copy);
+    } 
+    else if (conf.kernel == "scale" || conf.kernel == "stream_scale") {
+        run_stream_sweep(conf, res, StreamOp::Scale);
+    } 
+    else if (conf.kernel == "add" || conf.kernel == "stream_add") {
+        run_stream_sweep(conf, res, StreamOp::Add);
+    } 
+    else if (conf.kernel == "triad" || conf.kernel == "stream_triad") {
+        run_stream_sweep(conf, res, StreamOp::Triad);
+    } 
+    else {
+        std::cerr << "Error: Unknown kernel: " << conf.kernel << "\n";
+        return 1;
+    }
+
     res.save(conf);
-
+    std::cout << "Done.\n";
     return 0;
 }

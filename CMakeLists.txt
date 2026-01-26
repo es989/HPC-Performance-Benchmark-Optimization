@@ -1,39 +1,83 @@
-# minimal CMake version required to build the project
+# ------------------------------------------------------------
+# Minimal CMake version required to build the project
+# ------------------------------------------------------------
 cmake_minimum_required(VERSION 3.10)
 
-# giving a name to the project
+# ------------------------------------------------------------
+# Project name (used by IDEs, build systems, and package tools)
+# ------------------------------------------------------------
 project(HPC_Benchmarking)
 
-# using C++ 2017 standard for modern features (e.g., std::chrono, filesystem, etc.)
+# ------------------------------------------------------------
+# C++ Standard
+# We use C++17 for modern language features and a clean baseline.
+# ------------------------------------------------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ------------- Project Build Target -------------------
+# ------------------------------------------------------------
+# IntelliSense / Tooling (Highly recommended for VS Code)
+#
+# This generates build/compile_commands.json which contains:
+# - exact compiler command lines
+# - include paths (-I...)
+# - compile flags (-O3, -g, etc.)
+#
+# VS Code can read this database to resolve headers correctly
+# and eliminate false "cannot open source file" squiggles.
+# ------------------------------------------------------------
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Define the main executable and its source files
-# This creates the 'bench' binary from the main entry point
-add_executable(bench src/main.cpp)
-
-# ------------- Project Structure Configuration ---------
-
-# Add 'include' directory to the search path for header files (e.g., timer.hpp)
-# Scoped to 'bench' only (does not affect other targets)
-target_include_directories(bench PRIVATE include)
-
-# ------------- Compiler Flags / Optimization -----------
-
-# Enable common warnings (code quality) for all build types
-target_compile_options(bench PRIVATE -Wall)
-
-# Release Mode: Maximum performance
-# -O3         : aggressive optimizations (unrolling, inlining, vectorization)
-# -march=native : tune code generation for the current CPU (enables AVX/AVX2/AVX-512 when available)
-target_compile_options(bench PRIVATE
-  $<$<CONFIG:Release>:-O3 -march=native>
+# ------------------------------------------------------------
+# Build Target
+#
+# IMPORTANT:
+# - You must list ALL .cpp files that contain compiled code.
+# - If you forget a new .cpp (e.g., stream_sweep.cpp),
+#   the project may fail at link time with "undefined reference".
+# ------------------------------------------------------------
+add_executable(bench
+  src/main.cpp
+  src/stream_sweep.cpp
 )
 
-# Debug Mode: Transparency / easier debugging
-# -O0 : disable optimizations (baseline + easier to debug)
-# -g  : add debug symbols (maps machine code back to source lines)
+# ------------------------------------------------------------
+# Include Directories
+#
+# This tells the compiler where to search for project headers:
+#   #include "timer.hpp"
+#   #include "config.hpp"
+#   #include "results.hpp"
+#   #include "utils.hpp"
+#   #include "stream_kernels.hpp"
+#
+# Using ${CMAKE_SOURCE_DIR}/include is robust for out-of-source builds:
+# (i.e., when you build into a separate "build/" directory).
+# ------------------------------------------------------------
+target_include_directories(bench PRIVATE
+  ${CMAKE_SOURCE_DIR}/include
+)
+
+# ------------------------------------------------------------
+# Compiler Warnings
+#
+# -Wall enables a useful baseline of warnings (code quality).
+# You can later add -Wextra -Wpedantic if you want stricter checks.
+# ------------------------------------------------------------
+target_compile_options(bench PRIVATE -Wall)
+
+# ------------------------------------------------------------
+# Optimization / Debug Flags (per build type)
+#
+# Release:
+# -O3          : aggressive optimizations (inlining, unrolling, vectorization)
+# -march=native: tune code generation for the current CPU (AVX/AVX2/AVX-512 if available)
+#
+# Debug:
+# -O0 : disable optimizations (easier debugging + baseline comparisons)
+# -g  : emit debug symbols (stack traces, source-level debugging)
+# ------------------------------------------------------------
 target_compile_options(bench PRIVATE
-  $<$<CONFIG:Debug>:-O0 -g>)
+  $<$<CONFIG:Release>:-O3 -march=native>
+  $<$<CONFIG:Debug>:-O0 -g>
+)
