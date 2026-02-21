@@ -39,6 +39,31 @@ inline void clobber_memory() {
 }
 
 /**
+ * @brief Compute standard deviation for a vector of samples.
+ *
+ * @param samples Vector of timing samples (in nanoseconds).
+ * @return Standard deviation in the same units as input samples.
+ */
+inline double compute_stddev(const std::vector<double>& samples) {
+    if (samples.size() < 2) return 0.0;
+
+    // Compute mean
+    double sum = 0.0;
+    for (double s : samples) sum += s;
+    const double mean = sum / samples.size();
+
+    // Compute variance
+    double variance = 0.0;
+    for (double s : samples) {
+        const double diff = s - mean;
+        variance += diff * diff;
+    }
+    variance /= samples.size();
+
+    return std::sqrt(variance);
+}
+
+/**
  * @brief Compute percentile for timing samples (ns).
  *
  * @param samples Copy of vector (we sort it).

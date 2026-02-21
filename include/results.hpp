@@ -59,6 +59,9 @@ struct BenchmarkResult {
         std::size_t bytes = 0;        // working set size in bytes (ONE array size)
         double median_ns = 0.0;       // median iteration time (ns)
         double p95_ns = 0.0;          // p95 iteration time (ns)
+        double min_ns = 0.0;          // minimum iteration time (ns)
+        double max_ns = 0.0;          // maximum iteration time (ns)
+        double stddev_ns = 0.0;       // standard deviation of iteration times (ns)
         double bandwidth_gb_s = 0.0;  // effective GB/s (based on bytes touched)
         double checksum = 0.0;        // sampled checksum (DCE/correctness signal)
         std::string kernel;           // kernel name for this point
@@ -110,6 +113,9 @@ struct BenchmarkResult {
                     {"bytes", pt.bytes},
                     {"median_ns", pt.median_ns},
                     {"p95_ns", pt.p95_ns},
+                    {"min_ns", pt.min_ns},
+                    {"max_ns", pt.max_ns},
+                    {"stddev_ns", pt.stddev_ns},
                     {"bandwidth_gb_s", pt.bandwidth_gb_s},
                     {"checksum", pt.checksum}
                 });
