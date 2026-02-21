@@ -56,6 +56,22 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         std::vector<double> B(n, 2.0);
         std::vector<double> C(n, 3.0);
         const double s = 3.0;
+        
+        // Optional: prefault / pre-touch pages to avoid first-touch page faults
+        if (conf.prefault) {
+            const std::size_t page_elems = 4096 / sizeof(double);
+            for (std::size_t idx = 0; idx < n; idx += page_elems) {
+                // volatile access to force page allocation
+                volatile double t = A[idx];
+                A[idx] = t;
+                volatile double u = B[idx];
+                B[idx] = u;
+                volatile double v = C[idx];
+                C[idx] = v;
+            }
+            // small compiler barrier
+            do_not_optimize_away(A[0]);
+        }
 
         // ---- Warmup phase (not timed) ----
         for (int w = 0; w < conf.warmup; ++w) {
@@ -115,8 +131,18 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         }
 
         // ---- Statistics ----
+        // Min/Max from sorted samples
+        std::sort(samples.begin(), samples.end());
+        const long long min_sample = samples.front();
+        const long long max_sample = samples.back();
+
+        // Percentiles and standard deviation
         const double med = percentile_ns(samples, 50.0);
         const double p95 = percentile_ns(samples, 95.0);
+
+        // Convert samples to double for stddev calculation
+        std::vector<double> samples_double(samples.begin(), samples.end());
+        const double stddev = compute_stddev(samples_double);
 
         // Effective bytes per iteration:
         // multiplier (2 or 3) * size_bytes (ONE array size in bytes) GB calculate prone to numeric error
@@ -131,6 +157,9 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         pt.bytes = size_bytes;
         pt.median_ns = med;
         pt.p95_ns = p95;
+        pt.min_ns = static_cast<double>(min_sample);
+        pt.max_ns = static_cast<double>(max_sample);
+        pt.stddev_ns = stddev;
         pt.bandwidth_gb_s = bw_gb_s;
         pt.checksum = sum_sample;
 

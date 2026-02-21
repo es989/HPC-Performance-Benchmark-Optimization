@@ -21,6 +21,7 @@ struct Config {
     int warmup         = 10;              // how many warmup iterations (not measured, can be 0)
     std::string out    = "results.json";  // output file name/path
     int seed           = 14;              // RNG seed (useful when workload uses randomness) 14 because it is the day i was born
+    bool prefault      = false;           // if true, touch pages after allocation to avoid first-touch page faults
 
 
     
@@ -53,6 +54,7 @@ inline void print_help(const char* prog) {
         << "  --warmup  <int>    (default: 10)\n"
         << "  --out     <file>   (default: results.json)\n"
         << "  --seed    <int>    (default: 14)\n"
+        << "  --prefault         (default: false) pre-touch allocated pages to avoid page faults\n"
         << "  --help             show this message\n";
 }
 
@@ -104,6 +106,11 @@ inline Config parse_args(int argc, char** argv) {
             else if (args[i] == "--out") {
                 need_value(i);
                 conf.out = args[++i];
+            }
+
+            // ---- Boolean flags (no value) ----
+            else if (args[i] == "--prefault") {
+                conf.prefault = true;
             }
 
             // ---- Integer flags ----
