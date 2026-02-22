@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -146,7 +147,16 @@ struct BenchmarkResult {
         }
 
         // ---------- Write file ----------
-        std::ofstream file(conf.out);
+                {
+                        std::error_code ec;
+                        const std::filesystem::path out_path(conf.out);
+                        const auto parent = out_path.parent_path();
+                        if (!parent.empty()) {
+                                std::filesystem::create_directories(parent, ec);
+                        }
+                }
+
+                std::ofstream file(conf.out);
         if (!file) {
             std::cerr << "Error: failed to open output file: " << conf.out << "\n";
             return;
