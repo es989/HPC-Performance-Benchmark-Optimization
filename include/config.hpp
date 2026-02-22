@@ -47,7 +47,7 @@ inline void print_help(const char* prog) {
     std::cout
         << "Usage: " << prog << " [options]\n\n"
         << "Options:\n"
-        << " --kernel  <name>   (default: stream | allowed: copy, scale, add, triad, flops, fma)\n"
+        << " --kernel  <name>   (default: stream | allowed: copy, scale, add, triad, flops, fma, stream_copy, stream_scale, stream_add, stream_triad)\n"
         << "  --size    <str>    (default: 64MB)\n"
         << "  --threads <int>    (default: 1)\n"
         << "  --iters   <int>    (default: 100)\n"
@@ -165,6 +165,12 @@ inline Config parse_args(int argc, char** argv) {
         std::cerr << "Error: --warmup must be >= 0\n";
         std::exit(1);
     }
+    // Normalize kernel aliases (support both short and stream_* names)
+    if (conf.kernel == "stream_copy")  conf.kernel = "copy";
+    if (conf.kernel == "stream_scale") conf.kernel = "scale";
+    if (conf.kernel == "stream_add")   conf.kernel = "add";
+    if (conf.kernel == "stream_triad") conf.kernel = "triad";
+
    // Validate kernel name (fail fast on unsupported kernels)
     if (conf.kernel != "copy"  &&
         conf.kernel != "scale" &&
@@ -174,7 +180,7 @@ inline Config parse_args(int argc, char** argv) {
         conf.kernel != "fma"   &&
         conf.kernel != "stream") {
         std::cerr << "Error: unsupported --kernel '" << conf.kernel << "'\n";
-        std::cerr << "Allowed kernels: copy, scale, add, triad, flops, fma\n";
+        std::cerr << "Allowed kernels: copy, scale, add, triad, flops, fma, stream_copy, stream_scale, stream_add, stream_triad\n";
         std::exit(1);
     }
 

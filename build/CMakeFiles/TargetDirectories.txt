@@ -1,0 +1,3 @@
+C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/bench.dir
+C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/ALL_BUILD.dir
+C:/HPCProject/HPC-Performance-Benchmark-Optimization/build/CMakeFiles/ZERO_CHECK.dir
