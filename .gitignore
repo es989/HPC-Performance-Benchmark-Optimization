@@ -4,11 +4,8 @@ build/
 # Python virtual environment
 .venv/
 
-# Generated benchmark outputs (keep only curated samples)
-results/smoke_*.json
-results/*.json
-!results/results_triad_w50_i200.json
+# Generated benchmark outputs (do not commit run artifacts)
+results/
 
-# Generated plots/tables from scripts
-plots/*.csv
-plots/smoke_*.png
+# Generated plots/tables (do not commit)
+plots/
