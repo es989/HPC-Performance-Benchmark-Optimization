@@ -38,6 +38,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ------------------------------------------------------------
 add_executable(bench
   src/main.cpp
+  src/compute_bench.cpp
   src/stream_sweep.cpp
   src/sys_info.cpp
 )

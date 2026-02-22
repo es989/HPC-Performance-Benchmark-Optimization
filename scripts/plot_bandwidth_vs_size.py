@@ -10,6 +10,27 @@ import matplotlib.ticker as mticker
 from matplotlib.lines import Line2D
 
 
+def _require_pandas():
+    """Import pandas only when explicitly requested via CLI flags."""
+
+    try:
+        import pandas as pd  # type: ignore
+
+        return pd
+    except ModuleNotFoundError as e:
+        raise SystemExit(
+            "pandas is required for this option. Install it with: pip install pandas"
+        ) from e
+
+
+def _export_csv_with_pandas(rows, out_path: Path):
+    pd = _require_pandas()
+    df = pd.DataFrame(rows)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out_path, index=False)
+    print(f"Saved CSV to: {out_path}")
+
+
 # Manual cache configuration for this machine (bytes).
 # Values below are derived from Win32_Processor (KB -> bytes):
 #   L2CacheSize = 5120 KB  => 5 MiB
@@ -265,7 +286,7 @@ def annotate_switch_points(
     """
     n = len(sizes_bytes)
     if n < 2:
-        return
+        return []
 
     peak = max(bw_gb_s) if bw_gb_s else 0.0
     abs_thresh = max(min_drop_abs_gbs, min_drop_peak_frac * peak)
@@ -281,7 +302,7 @@ def annotate_switch_points(
         min_pre_drop_peak_frac=min_pre_drop_peak_frac,
     )
     if not candidates:
-        return
+        return []
 
     mode = (mode or "").strip().lower()
     if mode not in ("clean", "research"):
@@ -290,9 +311,10 @@ def annotate_switch_points(
     if mode == "research":
         selected = _enforce_separation(candidates, min_separation_factor, max_knees)
         if not selected:
-            return
+            return []
 
         print("Detected drops (research):")
+        rows = []
         for k, (drop, x_mid, i, b1, b2) in enumerate(selected, start=1):
             rel = (drop / b1) * 100.0 if b1 > 0 else 0.0
             eff = float(bytes_mult) * float(x_mid)
@@ -300,6 +322,21 @@ def annotate_switch_points(
             extra = f", near theory: {near}" if near else ""
             label = f"drop #{k} (-{drop:.1f} GB/s, -{rel:.0f}%){extra}"
             print(f"  {label}")
+
+            rows.append(
+                {
+                    "mode": "research",
+                    "rank": k,
+                    "x_mid_bytes": float(x_mid),
+                    "effective_bytes": float(eff),
+                    "drop_gb_s": float(drop),
+                    "rel_drop_percent": float(rel),
+                    "pre_bw_gb_s": float(b1),
+                    "post_bw_gb_s": float(b2),
+                    "near_theory": near or "",
+                    "label": label,
+                }
+            )
 
             ax.axvline(x_mid, color="black", linestyle="--", linewidth=1.2, alpha=0.65)
             ax.text(
@@ -314,7 +351,7 @@ def annotate_switch_points(
                 transform=ax.get_xaxis_transform(),
                 bbox={"facecolor": "white", "alpha": 0.65, "edgecolor": "none", "pad": 1.5},
             )
-        return
+        return rows
 
     # clean mode: strongest knee per (tentative) region label
     best_by_label = {}
@@ -335,9 +372,10 @@ def annotate_switch_points(
         max_keep=len(selected),
     )
     if not selected_simple:
-        return
+        return []
 
     print("Detected drops (clean):")
+    rows = []
     for drop, x_mid, i, b1, b2 in selected_simple:
         eff = float(bytes_mult) * float(x_mid)
         knee_label = classify_knee_region(eff, l1, l2, llc)
@@ -354,6 +392,22 @@ def annotate_switch_points(
             knee_label = "significant drop"
 
         print(f"  {knee_label}")
+
+        rows.append(
+            {
+                "mode": "clean",
+                "rank": "",
+                "x_mid_bytes": float(x_mid),
+                "effective_bytes": float(eff),
+                "drop_gb_s": float(drop),
+                "rel_drop_percent": float((drop / b1) * 100.0 if b1 > 0 else 0.0),
+                "pre_bw_gb_s": float(b1),
+                "post_bw_gb_s": float(b2),
+                "near_theory": near or "",
+                "label": knee_label,
+            }
+        )
+
         ax.axvline(x_mid, color="black", linestyle="--", linewidth=1.2, alpha=0.65)
         ax.text(
             x_mid,
@@ -367,6 +421,8 @@ def annotate_switch_points(
             transform=ax.get_xaxis_transform(),
             bbox={"facecolor": "white", "alpha": 0.65, "edgecolor": "none", "pad": 1.5},
         )
+
+    return rows
 
 
 def make_plot(json_path: Path, out_dir: Path, args):
@@ -384,6 +440,18 @@ def make_plot(json_path: Path, out_dir: Path, args):
             cpu = cpu_fallback
 
     bytes_mult = kernel_bytes_multiplier(kernel)
+
+    # Optional pandas exports (do not affect plotting / knees logic)
+    if bool(getattr(args, "export_csv", False)):
+        csv_path = out_dir / f"sweep_{kernel}.csv"
+        sweep_rows = []
+        for pt in sweep:
+            row = dict(pt)
+            if "bytes" in row:
+                row["effective_bytes"] = float(row["bytes"]) * float(bytes_mult)
+            row["kernel_config"] = kernel
+            sweep_rows.append(row)
+        _export_csv_with_pandas(sweep_rows, csv_path)
 
     plt.rcParams.update({
         "font.size": 11,
@@ -441,7 +509,7 @@ def make_plot(json_path: Path, out_dir: Path, args):
     ax.set_axisbelow(True)
 
     # Data-driven knees / drops
-    annotate_switch_points(
+    drops_rows = annotate_switch_points(
         ax,
         sizes_bytes,
         bw_gb_s,
@@ -456,6 +524,12 @@ def make_plot(json_path: Path, out_dir: Path, args):
         theory_match_tol=args.theory_match_tol,
         min_pre_drop_peak_frac=args.min_pre_drop_peak_frac,
     )
+
+    if bool(getattr(args, "export_drops_csv", False)) and drops_rows:
+        drops_csv = out_dir / f"drops_{kernel}_{args.mode}.csv"
+        for r in drops_rows:
+            r.setdefault("kernel_config", kernel)
+        _export_csv_with_pandas(drops_rows, drops_csv)
 
     # Small legend to explain styles
     legend_handles = [
@@ -488,6 +562,18 @@ def main():
         type=str,
         default=str(Path(__file__).resolve().parents[1] / "plots"),
         help="Directory to write plots (default: <repo>/plots)",
+    )
+
+    # Optional pandas extras (do not change plot output)
+    parser.add_argument(
+        "--export-csv",
+        action="store_true",
+        help="Export stats.sweep to CSV using pandas (optional dependency)",
+    )
+    parser.add_argument(
+        "--export-drops-csv",
+        action="store_true",
+        help="Export detected knees/drops table to CSV using pandas (optional dependency)",
     )
 
     parser.add_argument(

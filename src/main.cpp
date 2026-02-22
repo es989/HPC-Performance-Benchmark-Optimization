@@ -9,6 +9,9 @@
 // הצהרה על הפונקציה שנמצאת ב-stream_sweep.cpp
 void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op);
 
+// Compute microbenchmark runner (src/compute_bench.cpp)
+void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::string& kind);
+
 int main(int argc, char** argv) {
     Config conf = parse_args(argc, argv);
     BenchmarkResult res;
@@ -16,7 +19,11 @@ int main(int argc, char** argv) {
     std::cout << "--- Starting Benchmark: " << conf.kernel << " ---\n";
 
     // תמיכה גם בשמות קצרים וגם בארוכים
-    if (conf.kernel == "copy" || conf.kernel == "stream_copy") {
+    if (conf.kernel == "stream") {
+        // Default STREAM representative kernel
+        run_stream_sweep(conf, res, StreamOp::Triad);
+    }
+    else if (conf.kernel == "copy" || conf.kernel == "stream_copy") {
         run_stream_sweep(conf, res, StreamOp::Copy);
     } 
     else if (conf.kernel == "scale" || conf.kernel == "stream_scale") {
@@ -27,6 +34,9 @@ int main(int argc, char** argv) {
     } 
     else if (conf.kernel == "triad" || conf.kernel == "stream_triad") {
         run_stream_sweep(conf, res, StreamOp::Triad);
+    }
+    else if (conf.kernel == "flops" || conf.kernel == "fma") {
+        run_compute_bench(conf, res, conf.kernel);
     } 
     else {
         std::cerr << "Error: Unknown kernel: " << conf.kernel << "\n";

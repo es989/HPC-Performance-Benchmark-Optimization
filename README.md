@@ -136,7 +136,7 @@ Microbenchmarks are sensitive to OS scheduling jitter. On Windows, use CPU pinni
 From `build\Release`:
 
 ```bat
-cmd /c "start /wait """" /affinity 1 /high bench.exe --kernel triad --prefault --warmup 50 --iters 200 --out ..\..\results\triad_aff1.json"
+C:\Windows\System32\cmd.exe /c start "" /wait /affinity 1 /high bench.exe --kernel triad --prefault --warmup 50 --iters 200 --out ..\..\results\triad_aff1.json
 ```
 
 Notes:
@@ -165,6 +165,24 @@ Examples:
 ```powershell
 python scripts\plot_bandwidth_vs_size.py .\results\triad_aff1.json --mode clean
 python scripts\plot_bandwidth_vs_size.py .\results\triad_aff1.json --mode research --max-knees 5
+```
+
+Optional (pandas): export CSV tables for reporting/analysis:
+
+```powershell
+pip install -r scripts\requirements.txt
+python scripts\plot_bandwidth_vs_size.py .\results\triad_aff1.json --mode research --export-csv --export-drops-csv
+```
+
+This writes:
+* `plots\sweep_<kernel>.csv` (per-size sweep points)
+* `plots\drops_<kernel>_<mode>.csv` (detected knees/drops)
+
+If you want a minimal Plot #1 implemented explicitly with **pandas + matplotlib** (for portfolio alignment), use:
+
+```powershell
+pip install -r scripts\requirements.txt
+python scripts\plot_results.py .\results\triad_aff1.json
 ```
 <!-- PLOTTING_END -->
 
