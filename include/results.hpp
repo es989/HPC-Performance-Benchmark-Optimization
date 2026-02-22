@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "config.hpp"
+#include "sys_info.hpp"   // <--- NEW
 
 using json = nlohmann::json;
 
@@ -73,16 +74,38 @@ struct BenchmarkResult {
     void save(const Config& conf) const {
         json j;
 
+        // ---------- Platform snapshot (auto-collected) ----------
+        // Collected here to keep call sites unchanged: result.save(conf)
+        const auto sys = benchmark::collect_system_info();
+
         // Timestamp
         const auto now_tp = std::chrono::system_clock::now();
         const std::time_t now = std::chrono::system_clock::to_time_t(now_tp);
         std::stringstream ss;
         ss << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S");
 
-        // Metadata
+        // ---------- Metadata ----------
         j["metadata"]["timestamp"] = ss.str();
+
+        // Keep legacy fields (optional, no harm)
         j["metadata"]["platform"]["os"] = os;
         j["metadata"]["platform"]["compiler"] = compiler;
+
+        // ---------- Platform snapshot (auto-collected) ----------
+        // Script-friendly numeric fields
+        j["metadata"]["platform"]["logical_cores"] = sys.logical_cores;
+        j["metadata"]["platform"]["ram_total_gib"] = sys.ram_total_gib;
+
+        if (sys.cache_l1_bytes > 0) j["metadata"]["platform"]["cache_l1_bytes"] = sys.cache_l1_bytes;
+        if (sys.cache_l2_bytes > 0) j["metadata"]["platform"]["cache_l2_bytes"] = sys.cache_l2_bytes;
+        if (sys.cache_llc_bytes > 0) j["metadata"]["platform"]["cache_llc_bytes"] = sys.cache_llc_bytes;
+
+        // Human-friendly fields
+        j["metadata"]["platform"]["cpu_model"]        = sys.cpu_model;
+        j["metadata"]["platform"]["ram_total_pretty"] = sys.ram_total_pretty;
+        j["metadata"]["platform"]["os_distro"]        = sys.os_distro;
+        j["metadata"]["platform"]["os_kernel"]        = sys.os_kernel;
+        j["metadata"]["platform"]["compiler_full"]    = sys.compiler_info;
 
 #ifdef _MSC_VER
         j["metadata"]["platform"]["cpp_standard"] = _MSVC_LANG;
@@ -90,7 +113,7 @@ struct BenchmarkResult {
         j["metadata"]["platform"]["cpp_standard"] = __cplusplus;
 #endif
 
-        // Config (CLI)
+        // ---------- Config (CLI) ----------
         j["config"]["kernel"]  = conf.kernel;
         j["config"]["size"]    = conf.size;
         j["config"]["threads"] = conf.threads;
@@ -99,13 +122,13 @@ struct BenchmarkResult {
         j["config"]["seed"]    = conf.seed;
         j["config"]["out"]     = conf.out;
 
-        // Aggregate stats (if you use them)
+        // ---------- Aggregate stats (if you use them) ----------
         j["stats"]["performance"]["total_time_ns"]  = total_ns;
         j["stats"]["performance"]["avg_ns_per_op"]  = avg_ns;
         j["stats"]["performance"]["bandwidth_gb_s"] = bandwidth_gb_s;
         j["stats"]["performance"]["gflops"]         = gflops;
 
-        // Sweep points
+        // ---------- Sweep points ----------
         if (!sweep_points.empty()) {
             for (const auto& pt : sweep_points) {
                 j["stats"]["sweep"].push_back({
@@ -122,7 +145,7 @@ struct BenchmarkResult {
             }
         }
 
-        // Write file
+        // ---------- Write file ----------
         std::ofstream file(conf.out);
         if (!file) {
             std::cerr << "Error: failed to open output file: " << conf.out << "\n";

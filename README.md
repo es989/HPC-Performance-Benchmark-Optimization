@@ -15,6 +15,13 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
 ```
 
+On Windows/MSVC, you can also build an unoptimized Debug binary during development:
+
+```powershell
+cd build
+cmake --build . --config Debug
+```
+
 ### Quick sanity check (2 seconds)
 Use a tiny run to verify the binary works and produces output:
 
@@ -27,7 +34,32 @@ Use a tiny run to verify the binary works and produces output:
 ```bash
 ./bench --kernel triad --warmup 50 --iters 200 --out results.json
 ```
-*Output is written to `--out` (default: `results.json).*
+*Output is written to `--out` (default: `results.json`).*
+
+---
+
+## Build Modes
+
+This project supports two primary CMake configurations:
+
+- **Debug**  
+  Built with `cmake --build . --config Debug`  
+  Slower (no `-O3`), includes debug info, best for development and checking correctness.
+
+- **Release**  
+  Built with `cmake --build . --config Release` (after `cmake .. -DCMAKE_BUILD_TYPE=Release`)  
+  Optimized; this is what you should use for real performance measurements.
+
+---
+
+## Kernel Modes
+
+Kernels are selected with `--kernel` and fall into two categories:
+
+- **Memory-oriented**: `copy`, `scale`, `add`, `triad`  
+  Aliases: `stream_copy`, `stream_scale`, `stream_add`, `stream_triad`.
+
+- **Compute-oriented**: `flops`, `fma`
 
 ---
 
@@ -84,27 +116,57 @@ If different runs look "best" at different sizes, that typically indicates OS no
 * **Windows / WSL**: `--warmup 50 --iters 200` (or higher)
 * **Linux**: defaults often work, but higher iters improves percentile stability
 
-**Pin to one core (Affinity) + High priority**
+**Stability checklist (what usually matters)**
+- Use warmup (`--warmup`) to stabilize cache/DVFS.
+- Increase measured iters (`--iters`) for stable median/P95.
+- Pin to one core (affinity) to reduce core migration.
+- Use `--prefault` if you suspect first-touch / page-fault spikes.
 
-*Linux:*
-```bash
-taskset -c 0 ./bench --kernel copy --warmup 50 --iters 200
-```
-
-*Windows (PowerShell):*
-```powershell
-cd .\build\Release
-cmd /c 'start /wait "" /affinity 1 /high bench.exe --kernel copy --warmup 50 --iters 200'
-```
-
-**Optional: --prefault (pre-touch pages)**
-If you observe large `max_ns` / `p95_ns` spikes consistent with first-touch/page-fault effects, enable `--prefault`:
-```bash
-./bench --kernel copy --warmup 50 --iters 200 --prefault
-```
+For a copy/paste Windows command (affinity + high priority + prefault), see **Stable runs (Windows / low jitter)** below.
 
 **Best practice: multiple trials**
 Run 3–5 trials and report median-of-medians per size for reliable comparisons.
+
+<!-- BENCH_STABILITY_START -->
+## Stable runs (Windows / low jitter)
+
+Microbenchmarks are sensitive to OS scheduling jitter. On Windows, use CPU pinning + high priority for more stable median/P95.
+
+### Recommended stable run (Windows)
+From `build\Release`:
+
+```bat
+cmd /c "start /wait """" /affinity 1 /high bench.exe --kernel triad --prefault --warmup 50 --iters 200 --out ..\..\results\triad_aff1.json"
+```
+
+Notes:
+- `/affinity 1` pins to CPU0 (use `2` for CPU1, `4` for CPU2, etc.)
+- `--warmup N` is not timed (stabilizes CPU/cache/DVFS)
+- `--iters N` is timed per sweep point (higher = more stable percentiles)
+- `--prefault` pre-touches pages to reduce first-touch / page-fault noise
+
+Linux equivalent:
+
+```bash
+taskset -c 0 ./bench --kernel triad --prefault --warmup 50 --iters 200 --out results/triad_core0.json
+```
+<!-- BENCH_STABILITY_END -->
+
+<!-- PLOTTING_START -->
+## Plotting (bandwidth waterfall)
+
+This repo provides two annotation modes:
+
+- **clean**: conservative labels; only calls a cache boundary if the knee is near OS-reported cache sizes.
+- **research**: labels statistically significant drops as `drop #k (-X GB/s, -Y%)` without claiming cache levels.
+
+Examples:
+
+```powershell
+python scripts\plot_bandwidth_vs_size.py .\results\triad_aff1.json --mode clean
+python scripts\plot_bandwidth_vs_size.py .\results\triad_aff1.json --mode research --max-knees 5
+```
+<!-- PLOTTING_END -->
 
 ---
 
@@ -125,7 +187,16 @@ Bandwidth typically forms a "waterfall":
 2. Drops at LLC
 3. Drops again at DRAM
 
+Bandwidth peaks at small working sets (cache-resident), then drops sharply once the effective working set (3× arrays for triad) exceeds L2 capacity, and later transitions toward a DRAM-bound plateau.
+
+In research mode, we mark only statistically significant drops; clean mode labels cache boundaries only when the knee is near OS-reported cache sizes.
+
+Cache boundaries are approximate (OS-reported; per-core vs shared). Additional knees may reflect TLB/page effects, prefetch behavior, or memory-controller saturation.
+Non-monotonic "bumps" can also occur due to OS noise / DVFS, prefetcher behavior, or page/TLB effects, so interpret individual knees cautiously.
+
 **Ballpark ranges (highly CPU-dependent):**
+
+Ballpark only; depends heavily on kernel, ISA, and measurement method.
 
 | Memory level | Typical bandwidth (GB/s) |
 | :--- | :--- |
