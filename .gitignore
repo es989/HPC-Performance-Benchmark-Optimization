@@ -5,7 +5,9 @@ build/
 .venv/
 
 # Generated benchmark outputs (do not commit run artifacts)
-results/
+results/*
+!results/.gitkeep
 
 # Generated plots/tables (do not commit)
-plots/
+plots/*
+!plots/.gitkeep
