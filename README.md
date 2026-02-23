@@ -29,6 +29,25 @@ Use a tiny run to verify the binary works and produces output:
 ./bench --kernel copy --warmup 2 --iters 5
 ```
 
+### End-to-end suite (recommended)
+This runs a minimal, reproducible pipeline:
+**build → repeated runs → aggregate → generate 2 plots**.
+
+Install Python plotting deps once:
+
+```powershell
+.\.venv\Scripts\pip.exe install -r scripts\requirements.txt
+```
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_suite.py --config Release --repeats 3 --warmup 10 --iters 50 --prefault
+```
+
+Outputs:
+- `results/raw/*.json` (per-run raw JSON + captured stdout/stderr)
+- `results/summary/*_agg.json` + `results/summary/*_agg.csv` (aggregated)
+- `plots/*.png` (bandwidth vs size + latency vs size)
+
 ### Run a stable baseline (recommended)
 
 ```bash
@@ -59,7 +78,9 @@ Kernels are selected with `--kernel` and fall into two categories:
 - **Memory-oriented**: `copy`, `scale`, `add`, `triad`  
   Aliases: `stream_copy`, `stream_scale`, `stream_add`, `stream_triad`.
 
-- **Compute-oriented**: `flops`, `fma`
+- **Compute-oriented**: `flops`, `fma`, `dot`, `saxpy`
+
+- **Latency-oriented**: `latency` (pointer-chasing dependent-load sweep)
 
 ---
 
@@ -80,6 +101,8 @@ Defaults are defined in `include/config.hpp`.
 | `--warmup` | Unmeasured warmup iterations | `10` |
 | `--out` | Output JSON path | `results.json` |
 | `--seed` | RNG seed | `14` |
+| `--prefault` | Pre-touch pages to reduce first-touch/page-fault noise | off |
+| `--aligned` | Use 64B-aligned allocations where supported | off |
 | `--help` | Print help |  |
 
 > **Note:** For stable percentile statistics, prefer `--iters 200` (or higher), especially on Windows.
@@ -195,7 +218,7 @@ To make results comparable across machines and runs, record these environmental 
   ```bash
   cat /sys/kernel/mm/transparent_hugepage/enabled
   ```
-* **ISA targeting (`-march=native`)**: Release builds may enable CPU-specific vector ISA via `-march=native` (e.g., AVX2 / AVX-512 if available). Record CPU model and supported ISA when comparing results across systems.
+* **ISA targeting**: On GCC/Clang, Release builds may enable CPU-specific ISA via `-march=native` (e.g., AVX2 / AVX-512 if available). Record CPU model and supported ISA when comparing results across systems.
 
 ---
 
@@ -242,10 +265,19 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 * `plots/` – visualization assets (optional)
 * `.github/` – CI/CD and documentation templates
 
+## Report
+See `REPORT.md` for a minimal, reproducible run recipe and the artifact contract (where outputs live and what they mean).
+
+## Profiling & Opt Experiments (best-effort)
+Linux-focused helpers live in `scripts/`:
+- `run_perf_stat.py`, `run_valgrind_cachegrind.py`, `run_llvm_mca.py`, `run_opt_experiment.py`
+
+On non-Linux (e.g., Windows), the suite writes explicit `*_BLOCKED.txt` notes under `results/perf/`, `results/valgrind/`, and `results/llvm-mca/` when these tools aren’t available.
+
 ---
 
 ## Limitations & Warnings
 * **WSL2**: performance counters via `perf` may be limited.
 * **Thermal throttling**: long sweeps can heat the CPU and change frequency.
 * **Memory pressure**: multi-array kernels need enough free RAM to avoid swapping/paging.
-* **Hardware-specific builds**: Release builds may use `-march=native`; rebuild per machine.
+* **Hardware-specific builds**: Release builds may be CPU-tuned on GCC/Clang; rebuild per machine.

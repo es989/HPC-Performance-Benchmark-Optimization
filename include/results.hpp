@@ -65,6 +65,7 @@ struct BenchmarkResult {
         double max_ns = 0.0;          // maximum iteration time (ns)
         double stddev_ns = 0.0;       // standard deviation of iteration times (ns)
         double bandwidth_gb_s = 0.0;  // effective GB/s (based on bytes touched)
+                double ns_per_access = 0.0;   // pointer-chasing latency (ns per dependent load), when applicable
         double checksum = 0.0;        // sampled checksum (DCE/correctness signal)
         std::string kernel;           // kernel name for this point
     };
@@ -122,6 +123,8 @@ struct BenchmarkResult {
         j["config"]["warmup"]  = conf.warmup;
         j["config"]["seed"]    = conf.seed;
         j["config"]["out"]     = conf.out;
+        j["config"]["prefault"] = conf.prefault;
+        j["config"]["aligned"]  = conf.aligned;
 
         // ---------- Aggregate stats (if you use them) ----------
         j["stats"]["performance"]["total_time_ns"]  = total_ns;
@@ -132,7 +135,7 @@ struct BenchmarkResult {
         // ---------- Sweep points ----------
         if (!sweep_points.empty()) {
             for (const auto& pt : sweep_points) {
-                j["stats"]["sweep"].push_back({
+                                json row = {
                     {"kernel", pt.kernel},
                     {"bytes", pt.bytes},
                     {"median_ns", pt.median_ns},
@@ -142,7 +145,13 @@ struct BenchmarkResult {
                     {"stddev_ns", pt.stddev_ns},
                     {"bandwidth_gb_s", pt.bandwidth_gb_s},
                     {"checksum", pt.checksum}
-                });
+                                };
+
+                                if (pt.ns_per_access > 0.0) {
+                                        row["ns_per_access"] = pt.ns_per_access;
+                                }
+
+                                j["stats"]["sweep"].push_back(std::move(row));
             }
         }
 

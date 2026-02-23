@@ -39,6 +39,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(bench
   src/main.cpp
   src/compute_bench.cpp
+  src/latency_bench.cpp
   src/stream_sweep.cpp
   src/sys_info.cpp
 )
@@ -66,7 +67,12 @@ target_include_directories(bench PRIVATE
 # -Wall enables a useful baseline of warnings (code quality).
 # You can later add -Wextra -Wpedantic if you want stricter checks.
 # ------------------------------------------------------------
-target_compile_options(bench PRIVATE -Wall)
+if(MSVC)
+  # MSVC uses /Wn style warning levels; avoid passing GCC/Clang flags.
+  target_compile_options(bench PRIVATE /W4)
+else()
+  target_compile_options(bench PRIVATE -Wall)
+endif()
 
 # ------------------------------------------------------------
 # Optimization / Debug Flags (per build type)
@@ -79,7 +85,15 @@ target_compile_options(bench PRIVATE -Wall)
 # -O0 : disable optimizations (easier debugging + baseline comparisons)
 # -g  : emit debug symbols (stack traces, source-level debugging)
 # ------------------------------------------------------------
-target_compile_options(bench PRIVATE
-  $<$<CONFIG:Release>:-O3 -march=native>
-  $<$<CONFIG:Debug>:-O0 -g>
-)
+if(MSVC)
+  # Release in MSVC already implies optimizations; be explicit for clarity.
+  target_compile_options(bench PRIVATE
+    $<$<CONFIG:Release>:/O2>
+    $<$<CONFIG:Debug>:/Od /Zi>
+  )
+else()
+  target_compile_options(bench PRIVATE
+    $<$<CONFIG:Release>:-O3 -march=native>
+    $<$<CONFIG:Debug>:-O0 -g>
+  )
+endif()

@@ -22,6 +22,7 @@ struct Config {
     std::string out    = "results.json";  // output file name/path
     int seed           = 14;              // RNG seed (useful when workload uses randomness) 14 because it is the day i was born
     bool prefault      = false;           // if true, touch pages after allocation to avoid first-touch page faults
+    bool aligned       = false;           // if true, use 64B-aligned allocations where applicable
 
 
     
@@ -34,6 +35,8 @@ struct Config {
         std::cout << "Warmup  : " << warmup  << "\n";
         std::cout << "Output  : " << out     << "\n";
         std::cout << "Seed    : " << seed    << "\n";
+        std::cout << "Prefault: " << (prefault ? "true" : "false") << "\n";
+        std::cout << "Aligned : " << (aligned ? "true" : "false") << "\n";
         std::cout << "-------------------------------\n";
     }
 };
@@ -47,7 +50,7 @@ inline void print_help(const char* prog) {
     std::cout
         << "Usage: " << prog << " [options]\n\n"
         << "Options:\n"
-        << " --kernel  <name>   (default: stream | allowed: copy, scale, add, triad, flops, fma, stream_copy, stream_scale, stream_add, stream_triad)\n"
+        << " --kernel  <name>   (default: stream | allowed: copy, scale, add, triad, flops, fma, dot, saxpy, latency)\n"
         << "  --size    <str>    (default: 64MB)\n"
         << "  --threads <int>    (default: 1)\n"
         << "  --iters   <int>    (default: 100)\n"
@@ -55,6 +58,7 @@ inline void print_help(const char* prog) {
         << "  --out     <file>   (default: results.json)\n"
         << "  --seed    <int>    (default: 14)\n"
         << "  --prefault         (default: false) pre-touch allocated pages to avoid page faults\n"
+        << "  --aligned          (default: false) use 64B-aligned allocations (compute/latency)\n"
         << "  --help             show this message\n";
 }
 
@@ -111,6 +115,9 @@ inline Config parse_args(int argc, char** argv) {
             // ---- Boolean flags (no value) ----
             else if (args[i] == "--prefault") {
                 conf.prefault = true;
+            }
+            else if (args[i] == "--aligned") {
+                conf.aligned = true;
             }
 
             // ---- Integer flags ----
@@ -178,9 +185,12 @@ inline Config parse_args(int argc, char** argv) {
         conf.kernel != "triad" &&
         conf.kernel != "flops" &&
         conf.kernel != "fma"   &&
+        conf.kernel != "dot"   &&
+        conf.kernel != "saxpy" &&
+        conf.kernel != "latency" &&
         conf.kernel != "stream") {
         std::cerr << "Error: unsupported --kernel '" << conf.kernel << "'\n";
-        std::cerr << "Allowed kernels: copy, scale, add, triad, flops, fma, stream_copy, stream_scale, stream_add, stream_triad\n";
+        std::cerr << "Allowed kernels: copy, scale, add, triad, flops, fma, dot, saxpy, latency\n";
         std::exit(1);
     }
 

@@ -14,6 +14,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <winreg.h>
 #endif
 
 // ---------- Helpers ----------
@@ -40,6 +41,26 @@ static std::string get_cpu_model() {
     }
     return "Unknown Linux CPU";
 #elif defined(_WIN32)
+    // Best-effort without WMI: registry key is stable and requires no extra components.
+    // HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0\ProcessorNameString
+    HKEY key = nullptr;
+    if (RegOpenKeyExA(
+            HKEY_LOCAL_MACHINE,
+            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+            0,
+            KEY_QUERY_VALUE,
+            &key) == ERROR_SUCCESS) {
+        char buf[512] = {};
+        DWORD buf_size = static_cast<DWORD>(sizeof(buf));
+        DWORD type = 0;
+        const LONG rc = RegQueryValueExA(key, "ProcessorNameString", nullptr, &type,
+                                        reinterpret_cast<LPBYTE>(buf), &buf_size);
+        RegCloseKey(key);
+        if (rc == ERROR_SUCCESS && (type == REG_SZ || type == REG_EXPAND_SZ)) {
+            const std::string s(buf);
+            if (!trim(s).empty()) return trim(s);
+        }
+    }
     return "Unknown CPU (Windows)";
 #elif defined(__APPLE__)
     return "Unknown CPU (macOS)";
@@ -108,6 +129,17 @@ static uint64_t get_ram_total_gib_rounded() {
     const uint64_t half_gib = one_gib / 2;
 
     // Round-to-nearest GiB (no float, no <cmath>).
+    return (total_bytes + half_gib) / one_gib;
+#elif defined(_WIN32)
+    MEMORYSTATUSEX ms {};
+    ms.dwLength = sizeof(ms);
+    if (!GlobalMemoryStatusEx(&ms)) {
+        return 0;
+    }
+
+    const uint64_t total_bytes = static_cast<uint64_t>(ms.ullTotalPhys);
+    const uint64_t one_gib  = 1024ULL * 1024ULL * 1024ULL;
+    const uint64_t half_gib = one_gib / 2;
     return (total_bytes + half_gib) / one_gib;
 #else
     return 0;

@@ -12,6 +12,9 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op);
 // Compute microbenchmark runner (src/compute_bench.cpp)
 void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::string& kind);
 
+// Latency pointer-chasing runner (src/latency_bench.cpp)
+void run_latency_bench(const Config& conf, BenchmarkResult& res);
+
 int main(int argc, char** argv) {
     Config conf = parse_args(argc, argv);
     BenchmarkResult res;
@@ -35,9 +38,12 @@ int main(int argc, char** argv) {
     else if (conf.kernel == "triad" || conf.kernel == "stream_triad") {
         run_stream_sweep(conf, res, StreamOp::Triad);
     }
-    else if (conf.kernel == "flops" || conf.kernel == "fma") {
+    else if (conf.kernel == "flops" || conf.kernel == "fma" || conf.kernel == "dot" || conf.kernel == "saxpy") {
         run_compute_bench(conf, res, conf.kernel);
     } 
+    else if (conf.kernel == "latency") {
+        run_latency_bench(conf, res);
+    }
     else {
         std::cerr << "Error: Unknown kernel: " << conf.kernel << "\n";
         return 1;
