@@ -1,5 +1,8 @@
 # Build artifacts (out-of-source builds)
 build/
+build_*/
+out.txt
+.vscode/
 
 # Python virtual environment
 .venv/

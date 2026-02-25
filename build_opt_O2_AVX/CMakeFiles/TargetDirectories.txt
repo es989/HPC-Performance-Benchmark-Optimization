@@ -1,3 +1,0 @@
-C:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX/CMakeFiles/bench.dir
-C:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX/CMakeFiles/ALL_BUILD.dir
-C:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX/CMakeFiles/ZERO_CHECK.dir

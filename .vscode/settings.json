@@ -1,6 +1,0 @@
-{
-  // Prefer CMake Presets for consistent configuration across CLI/VS Code.
-  "cmake.useCMakePresets": "always",
-  "cmake.configurePreset": "msvc-x64",
-  "cmake.buildPreset": "release"
-}
