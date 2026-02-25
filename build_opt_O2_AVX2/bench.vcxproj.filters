@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\compute_bench.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\latency_bench.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\stream_sweep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\src\sys_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{C2BA6C7D-A743-3D17-8926-94EDC7E48688}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,35 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "msvc-x64",
+      "displayName": "MSVC x64 (VS generator)",
+      "description": "Default preset for VS Code CMake Tools on Windows.",
+      "generator": "Visual Studio 16 2019",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/presets/msvc-x64",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "displayName": "Release",
+      "configurePreset": "msvc-x64",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "configurePreset": "msvc-x64",
+      "configuration": "Debug"
+    }
+  ]
+}

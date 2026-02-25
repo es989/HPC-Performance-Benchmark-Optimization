@@ -11,6 +11,13 @@
 
 /**
  * @brief Convert bytes to number of double elements.
+ *
+ * Since the STREAM kernels operate on arrays of `double` (8 bytes each),
+ * we need to convert the requested working set size in bytes to the
+ * corresponding array length.
+ *
+ * @param bytes The total size of one array in bytes.
+ * @return The number of `double` elements.
  */
 static std::size_t bytes_to_elems(std::size_t bytes) {
     return bytes / sizeof(double);
@@ -19,18 +26,22 @@ static std::size_t bytes_to_elems(std::size_t bytes) {
 /**
  * @brief Build a sweep across typical cache/DRAM regions.
  *
- * Note: Later can refine this using actual cache sizes of the CPU.
+ * Generates a vector of array sizes (in bytes) to test. The sizes are chosen
+ * to span from small enough to fit in L1 cache (32KB) up to large enough
+ * to force DRAM access (512MB). This creates the "waterfall" plot effect.
+ *
+ * @return A vector of sizes in bytes.
  */
 static std::vector<std::size_t> build_sweep_bytes() {
     std::vector<std::size_t> sizes;
 
-    // 32KB -> 256KB each step increase *2
+    // 32KB -> 256KB each step increase *2 (Targets L1/L2 caches)
     for (std::size_t kb = 32; kb <= 256; kb *= 2) sizes.push_back(kb * 1024);
 
-    // 512KB -> 8MB
+    // 512KB -> 8MB (Targets L2/L3/LLC caches)
     for (std::size_t kb = 512; kb <= 8192; kb *= 2) sizes.push_back(kb * 1024);
 
-    // 16MB -> 512MB
+    // 16MB -> 512MB (Targets Main Memory / DRAM)
     for (std::size_t mb = 16; mb <= 512; mb *= 2) sizes.push_back(mb * 1024ull * 1024ull);
 
     return sizes;
@@ -39,9 +50,17 @@ static std::vector<std::size_t> build_sweep_bytes() {
 /**
  * @brief Run STREAM sweep for one kernel op (copy/scale/add/triad).
  *
+ * This is the core measurement loop for memory bandwidth. It iterates over
+ * the sizes created by `build_sweep_bytes()`, allocates the arrays,
+ * performs a warmup phase, and then times the kernel execution.
+ *
  * Output:
  * - one BenchmarkResult::Point per size
  * - each point contains median/p95 and effective bandwidth
+ *
+ * @param conf The parsed configuration (warmup, iters, prefault, etc.).
+ * @param res The result object to populate with sweep points.
+ * @param op The specific STREAM operation to run.
  */
 void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
     const KernelDesc kd = make_stream_desc(op);
@@ -141,7 +160,11 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         const double p95 = percentile_ns(samples, 95.0);
 
         // Convert samples to double for stddev calculation
-        std::vector<double> samples_double(samples.begin(), samples.end());
+        std::vector<double> samples_double;
+        samples_double.reserve(samples.size());
+        for (auto ns : samples) {
+            samples_double.push_back(static_cast<double>(ns));
+        }
         const double stddev = compute_stddev(samples_double);
 
         // Effective bytes per iteration:

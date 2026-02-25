@@ -83,8 +83,14 @@ struct BenchmarkResult {
         // Timestamp
         const auto now_tp = std::chrono::system_clock::now();
         const std::time_t now = std::chrono::system_clock::to_time_t(now_tp);
+        std::tm tm_buf{};
+#if defined(_WIN32)
+        localtime_s(&tm_buf, &now);
+#else
+        localtime_r(&now, &tm_buf);
+#endif
         std::stringstream ss;
-        ss << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S");
+        ss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S");
 
         // ---------- Metadata ----------
         j["metadata"]["timestamp"] = ss.str();

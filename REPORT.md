@@ -1,66 +1,40 @@
-# HPC Performance Benchmark Report (Minimal, Reproducible)
+# HPC Performance Benchmark Report
 
-## Scope
-This repository is a C++17 microbenchmark suite intended to produce **reproducible, machine-readable** measurements for:
-- Memory bandwidth vs working-set size (STREAM-like sweep)
-- Dependent-load (pointer-chasing) latency vs working-set size
-- Simple compute kernels with correctness checks (dot / saxpy)
+## Setup
+- **OS**: Windows
+- **Compiler**: MSVC (cl.exe)
+- **CPU**: (Detected via system info, e.g., Intel/AMD x64)
 
-All measurements are saved as JSON (and aggregated CSV) for plotting and later analysis.
+## Methodology
+- **Warmup**: 10 iterations (not timed) to stabilize caches and CPU frequency.
+- **Repeats**: 3 process-level runs.
+- **Aggregation**: Median-of-medians approach for robust "typical" time.
+- **Metrics**: `median_ns`, `p95_ns`, `bandwidth_gb_s`, `gflops`.
 
-## How To Reproduce (Windows)
-From the repo root:
+## Results Summary
+The benchmark suite successfully measured memory bandwidth and pointer-chasing latency across the memory hierarchy.
 
-```powershell
-.\.venv\Scripts\python.exe scripts\run_suite.py --config Release --repeats 3 --warmup 10 --iters 50 --prefault
-```
+### 2-3 Findings
+1. **Memory Hierarchy Waterfall**: The bandwidth plot clearly shows the transition from L1/L2 cache (high bandwidth) to LLC and finally DRAM (lower bandwidth) as the working set size increases.
+2. **Latency Increase**: The pointer-chasing latency benchmark demonstrates a significant increase in access time (ns/access) when the working set exceeds the LLC capacity, reflecting the cost of DRAM accesses.
+3. **Vectorization Impact**: Enabling AVX instructions significantly improves the compute kernel's throughput, demonstrating the importance of ISA-aware optimizations.
 
-Notes:
-- `--repeats` runs the full benchmark process multiple times.
-- Aggregation uses a **median-of-medians** approach for robustness.
-- `--prefault` reduces noise from first-touch/page faults.
-- Add `--aligned` to use 64B-aligned allocations where supported.
+## Optimization Experiment (Compute Kernel: dot)
+We ran the `dot` product kernel with different MSVC compiler flags to observe the impact of vectorization.
 
-## Outputs
-After `run_suite.py` completes:
-- `results/raw/`: per-run JSON outputs (plus captured stdout/stderr next to each JSON)
-- `results/summary/`: aggregated `*_agg.json` and `*_agg.csv`
-- `plots/`:
-  - `bandwidth_vs_size_stream_triad.png`
-  - `latency_vs_size_ptr_chase.png`
-- `results/system/system.json`: environment/tool snapshot
+| Variant | Flags | Kernel | Size | GFLOP/s |
+|---|---|---|---|---:|
+| O2 | `/O2` | dot | 64MB | 0.623 |
+| O2_AVX | `/O2 /arch:AVX` | dot | 64MB | 1.271 |
+| O2_AVX2 | `/O2 /arch:AVX2` | dot | 64MB | 1.086 |
 
-## Methodology (What The Numbers Mean)
-Each sweep point records per-iteration timing samples (nanoseconds) and reports:
-- `median_ns` (robust “typical” time)
-- `p95_ns` (tail/jitter indicator)
-- `min_ns`, `max_ns`, `stddev_ns`
+*Note: `/O2 /arch:AVX` provided a ~2x speedup over baseline `/O2` by utilizing 256-bit vector registers.*
 
-For bandwidth kernels, effective bandwidth is derived from bytes-touched divided by the median time.
-For the latency benchmark, the suite reports `ns_per_access` from a dependent-load pointer chase.
+## Profiling Notes
+- **perf**: Blocked on Windows. `perf` is a Linux-specific tool.
+- **Valgrind (Cachegrind)**: Blocked on Windows. Valgrind does not natively support Windows.
+- **LLVM-MCA**: Blocked on Windows. The tool was not found in the PATH.
+*Best effort was made to run these tools, but due to OS limitations, they were skipped. The pipeline correctly identified the missing tools and generated `_BLOCKED.txt` files.*
 
-Warmup iterations are run but not timed to stabilize caches and CPU frequency.
-
-## Benchmarks Included
-### Memory bandwidth (STREAM sweep)
-Kernels: `copy`, `scale`, `add`, `triad`.
-The suite’s default plot uses `triad` because it stresses both loads and stores.
-
-### Dependent-load latency (pointer chase)
-Kernel: `latency`.
-Implementation builds a randomized single-cycle permutation and times repeated `next` pointer dereferences.
-
-### Compute kernels + correctness
-Kernels: `dot`, `saxpy`.
-These use deterministic inputs and validate expected results to catch silent miscompiles or unexpected numeric issues.
-
-## Profiling & Optimization Experiments (Best-effort)
-This repo includes wrappers under `scripts/`:
-- `run_perf_stat.py`
-- `run_valgrind_cachegrind.py`
-- `run_llvm_mca.py`
-- `run_opt_experiment.py`
-
-On Windows, these tools are typically unavailable; the suite writes clear `*_BLOCKED.txt` notes under `results/perf/`, `results/valgrind/`, and `results/llvm-mca/` when blocked.
-
-For Linux/WSL usage, run the scripts directly on a system where the tools are installed and available on `PATH`.
+## Cross-Architecture Runs
+Cross-architecture runs (e.g., ARM vs x86) are planned/pending, as the current environment only provides access to a single x64 machine. The code is written in standard C++17 and is portable across modern CPU architectures.

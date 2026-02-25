@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX2/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

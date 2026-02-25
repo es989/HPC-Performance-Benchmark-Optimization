@@ -15,6 +15,19 @@
 
 namespace {
 
+/**
+ * @brief Calculate a sampled checksum of an array.
+ *
+ * This is used to verify the correctness of the compute kernels without
+ * adding significant overhead to the measurement. By sampling every `stride`
+ * elements, we ensure the compiler cannot optimize away the computation
+ * (Dead Code Elimination) because the result is "used" by the checksum.
+ *
+ * @param data Pointer to the array data.
+ * @param n Total number of elements in the array.
+ * @param stride The step size for sampling (e.g., every 1024th element).
+ * @return The sum of the sampled elements.
+ */
 double checksum_sampled_ptr(const double* data, std::size_t n, std::size_t stride) {
     if (!data || n == 0) return 0.0;
     if (stride == 0) stride = 1;
@@ -25,13 +38,30 @@ double checksum_sampled_ptr(const double* data, std::size_t n, std::size_t strid
     return sum;
 }
 
+/**
+ * @brief Convert a size in bytes to the number of `double` elements.
+ *
+ * @param bytes The total size in bytes.
+ * @return The number of `double` elements (bytes / 8).
+ */
 std::size_t bytes_to_elems(std::uint64_t bytes) {
     return static_cast<std::size_t>(bytes / sizeof(double));
 }
 
-// High-arithmetic-intensity per-element kernel.
-// Each inner iteration is 1 FMA ~= 2 flops (mul+add).
-// Returns checksum to prevent DCE.
+/**
+ * @brief High-arithmetic-intensity per-element kernel using FMA.
+ *
+ * This kernel is designed to test the CPU's floating-point throughput.
+ * It performs a tight loop of Fused Multiply-Add (FMA) operations on each
+ * element of the array. FMA computes `(x * alpha) + beta` in a single
+ * instruction, which is highly optimized on modern CPUs (e.g., AVX2/AVX-512).
+ *
+ * Each inner iteration is 1 FMA ~= 2 flops (multiply + add).
+ *
+ * @param a The array of elements to process.
+ * @param inner The number of FMA operations to perform per element.
+ * @return A sampled checksum of the array to prevent Dead Code Elimination.
+ */
 double compute_fma_kernel(std::vector<double>& a, int inner) {
     const double alpha = 1.0000000001;
     const double beta = 0.0000000001;
@@ -39,6 +69,7 @@ double compute_fma_kernel(std::vector<double>& a, int inner) {
     for (double& v : a) {
         double x = v;
         for (int k = 0; k < inner; ++k) {
+            // std::fma maps to hardware FMA instructions if available.
             x = std::fma(x, alpha, beta);
         }
         v = x;
@@ -48,7 +79,18 @@ double compute_fma_kernel(std::vector<double>& a, int inner) {
     return Validator::checksum_sampled(a, stride);
 }
 
-// Similar to FMA, but expressed as mul+add (so compilers may or may not fuse).
+/**
+ * @brief High-arithmetic-intensity kernel using explicit multiply and add.
+ *
+ * Similar to `compute_fma_kernel`, but expressed as separate multiplication
+ * and addition operations. Depending on the compiler and optimization flags
+ * (e.g., `-ffp-contract=fast`), the compiler may or may not fuse these into
+ * a single FMA instruction. This is useful for testing compiler behavior.
+ *
+ * @param a The array of elements to process.
+ * @param inner The number of operations to perform per element.
+ * @return A sampled checksum of the array.
+ */
 double compute_flops_kernel(std::vector<double>& a, int inner) {
     const double alpha = 1.0000000001;
     const double beta = 0.0000000001;
@@ -56,6 +98,7 @@ double compute_flops_kernel(std::vector<double>& a, int inner) {
     for (double& v : a) {
         double x = v;
         for (int k = 0; k < inner; ++k) {
+            // Explicit mul + add. May be fused by the compiler.
             x = x * alpha + beta;
         }
         v = x;
@@ -65,6 +108,19 @@ double compute_flops_kernel(std::vector<double>& a, int inner) {
     return Validator::checksum_sampled(a, stride);
 }
 
+/**
+ * @brief Standard Dot Product kernel.
+ *
+ * Computes the dot product of two vectors: sum(x[i] * y[i]).
+ * This is a fundamental BLAS Level 1 operation, heavily reliant on memory
+ * bandwidth but also capable of utilizing SIMD instructions (AVX/AVX2) for
+ * the multiplication and reduction.
+ *
+ * @param x Pointer to the first vector.
+ * @param y Pointer to the second vector.
+ * @param n Number of elements in the vectors.
+ * @return The scalar dot product result.
+ */
 double compute_dot_kernel(const double* x, const double* y, std::size_t n) {
     double sum = 0.0;
     for (std::size_t i = 0; i < n; ++i) {
@@ -73,6 +129,20 @@ double compute_dot_kernel(const double* x, const double* y, std::size_t n) {
     return sum;
 }
 
+/**
+ * @brief Standard SAXPY (Single-precision A*X Plus Y) kernel.
+ *
+ * Computes `out[i] = a * x[i] + y[i]`.
+ * Another fundamental BLAS Level 1 operation. It reads two arrays and writes
+ * to a third, making it very similar to the STREAM Triad benchmark, but
+ * typically used in a compute context to measure vectorization efficiency.
+ *
+ * @param a The scalar multiplier.
+ * @param x Pointer to the first input vector.
+ * @param y Pointer to the second input vector.
+ * @param out Pointer to the output vector.
+ * @param n Number of elements to process.
+ */
 void compute_saxpy_kernel(double a, const double* x, const double* y, double* out, std::size_t n) {
     for (std::size_t i = 0; i < n; ++i) {
         out[i] = a * x[i] + y[i];
@@ -81,8 +151,20 @@ void compute_saxpy_kernel(double a, const double* x, const double* y, double* ou
 
 } // namespace
 
-// Compute microbenchmark runner for --kernel flops / fma.
-// Produces one sweep point (bytes = working set size) and fills res.gflops.
+/**
+ * @brief Compute microbenchmark runner for --kernel flops / fma.
+ *
+ * This function sets up and runs the compute-bound benchmarks. Unlike the
+ * STREAM sweep which tests multiple sizes, this runs a single size (specified
+ * by `--size`) and focuses on measuring GFLOP/s (Giga Floating-Point Operations
+ * Per Second).
+ *
+ * It handles memory allocation, warmup iterations, and the timed measurement loop.
+ *
+ * @param conf The parsed configuration (size, warmup, iters, etc.).
+ * @param res The result object to populate with performance metrics.
+ * @param kind The specific compute kernel to run ("flops" or "fma").
+ */
 void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::string& kind) {
     std::uint64_t size_bytes = 0;
     try {
@@ -258,7 +340,11 @@ void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::stri
     const double med = percentile_ns(samples, 50.0);
     const double p95 = percentile_ns(samples, 95.0);
 
-    std::vector<double> samples_double(samples.begin(), samples.end());
+    std::vector<double> samples_double;
+    samples_double.reserve(samples.size());
+    for (auto ns : samples) {
+        samples_double.push_back(static_cast<double>(ns));
+    }
     const double stddev = compute_stddev(samples_double);
 
     // FLOP accounting: 1 FMA (or mul+add) per inner step => 2 flops.

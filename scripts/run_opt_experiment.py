@@ -53,28 +53,28 @@ def main() -> int:
     out_dir = ROOT / "results" / "summary"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    if os.name != "posix":
-        (out_dir / "opt_experiment_BLOCKED.txt").write_text(
-            "Optimization experiment requires a Linux toolchain (clang++ or g++) to build with -O2/-O3/-march=native.\n"
-            "Suggested: run under native Linux or WSL2.\n",
-            encoding="utf-8",
-        )
-        return 2
+    is_msvc = os.name == "nt"
 
-    # Require a GCC/Clang-style compiler in PATH.
-    cxx = shutil.which("clang++") or shutil.which("g++")
-    if not cxx:
-        (out_dir / "opt_experiment_BLOCKED.txt").write_text(
-            "No clang++/g++ found in PATH. Install a Linux compiler toolchain and retry.\n",
-            encoding="utf-8",
-        )
-        return 2
-
-    variants = [
-        ("O2", "-O2"),
-        ("O3", "-O3"),
-        ("O3_native", "-O3 -march=native"),
-    ]
+    if is_msvc:
+        variants = [
+            ("O2", "/O2"),
+            ("O2_AVX", "/O2 /arch:AVX"),
+            ("O2_AVX2", "/O2 /arch:AVX2"),
+        ]
+        cxx = "cl"
+    else:
+        cxx = shutil.which("clang++") or shutil.which("g++")
+        if not cxx:
+            (out_dir / "opt_experiment_BLOCKED.txt").write_text(
+                "No clang++/g++ found in PATH. Install a Linux compiler toolchain and retry.\n",
+                encoding="utf-8",
+            )
+            return 2
+        variants = [
+            ("O2", "-O2"),
+            ("O3", "-O3"),
+            ("O3_native", "-O3 -march=native"),
+        ]
 
     s = stamp()
     rows = []
@@ -100,15 +100,20 @@ def main() -> int:
             (out_dir / f"opt_experiment_{s}_{name}_cmake.txt").write_text(cfg.stdout + "\n" + cfg.stderr, encoding="utf-8")
             return cfg.returncode
 
-        b = run(["cmake", "--build", str(build_dir)], cwd=ROOT)
+        build_cmd = ["cmake", "--build", str(build_dir)]
+        if is_msvc:
+            build_cmd += ["--config", "Release"]
+        b = run(build_cmd, cwd=ROOT)
         if b.returncode != 0:
             (out_dir / f"opt_experiment_{s}_{name}_build.txt").write_text(b.stdout + "\n" + b.stderr, encoding="utf-8")
             return b.returncode
 
         bench = build_dir / "bench"
+        if is_msvc:
+            bench = build_dir / "Release" / "bench.exe"
         if not bench.exists():
             # Some generators might place it elsewhere; shallow search.
-            matches = list(build_dir.glob("**/bench"))
+            matches = list(build_dir.glob("**/bench.exe")) + list(build_dir.glob("**/bench"))
             bench = matches[0] if matches else bench
 
         out_json = out_dir / f"opt_{args.kernel}_{name}_{s}.json"

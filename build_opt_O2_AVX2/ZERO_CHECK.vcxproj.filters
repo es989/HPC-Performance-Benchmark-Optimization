@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\HPCProject\HPC-Performance-Benchmark-Optimization\build_opt_O2_AVX2\CMakeFiles\c76c414f704c6f07e8e1fcaba4a0bee1\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{6C39E9FF-1B20-3221-A497-06F7584ADFAE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

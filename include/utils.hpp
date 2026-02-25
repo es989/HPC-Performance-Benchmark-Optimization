@@ -10,15 +10,24 @@
  * @brief Prevent the compiler from optimizing away a value.
  *
  * This is a COMPILER barrier (not a CPU fence).
- * It forces the compiler to treat the value as "observed/used".
+ * It forces the compiler to treat the value as "observed/used" by passing it
+ * into an empty inline assembly block. This is critical in microbenchmarks
+ * to prevent Dead Code Elimination (DCE) from removing the entire kernel
+ * if the output is never printed or used.
+ *
+ * @tparam T The type of the value to protect.
+ * @param value The value that must not be optimized away.
  */
 template <typename T>
 inline void do_not_optimize_away(const T& value) {
 #if defined(__GNUC__) || defined(__clang__)
-    // "g" constraint: value can be in register or memory; "memory" clobber blocks reordering.
+    // "g" constraint: value can be in register or memory.
+    // "memory" clobber: tells the compiler that memory might have been modified,
+    // preventing it from caching values in registers across this boundary.
     asm volatile("" : : "g"(value) : "memory");
 #else
-    // MSVC fallback: store into volatile to force a side-effect.
+    // MSVC fallback: store into a volatile variable to force a side-effect.
+    // The compiler is required to emit the store instruction.
     volatile T sink = value;
     (void)sink;
 #endif
@@ -28,18 +37,27 @@ inline void do_not_optimize_away(const T& value) {
  * @brief Prevent compiler reordering of memory operations across this point.
  *
  * Helpful around timing boundaries to reduce code motion across start/stop.
+ * Without this, an aggressive optimizing compiler might move instructions
+ * from inside the benchmark loop to outside the timer calls, artificially
+ * inflating the measured performance.
  */
 inline void clobber_memory() {
 #if defined(__GNUC__) || defined(__clang__)
+    // Empty assembly block with a "memory" clobber.
+    // Acts as a full compiler memory barrier.
     asm volatile("" : : : "memory");
 #else
     // MSVC: no perfect standard equivalent; this is left empty intentionally.
-    // If needed, keep timing code in separate translation units and avoid inlining.
+    // If needed, keep timing code in separate translation units and avoid inlining,
+    // or use _ReadWriteBarrier() from <intrin.h>.
 #endif
 }
 
 /**
  * @brief Compute standard deviation for a vector of samples.
+ *
+ * Used to measure the variance and stability of the benchmark runs.
+ * High standard deviation indicates system noise (interrupts, context switches).
  *
  * @param samples Vector of timing samples (in nanoseconds).
  * @return Standard deviation in the same units as input samples.

@@ -33,15 +33,22 @@ Use a tiny run to verify the binary works and produces output:
 This runs a minimal, reproducible pipeline:
 **build → repeated runs → aggregate → generate 2 plots**.
 
-Install Python plotting deps once:
+Activate the venv (recommended) and install Python plotting deps once:
 
 ```powershell
-.\.venv\Scripts\pip.exe install -r scripts\requirements.txt
+& .\.venv\Scripts\Activate.ps1
 ```
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\run_suite.py --config Release --repeats 3 --warmup 10 --iters 50 --prefault
+python -m pip install -r scripts\requirements.txt
 ```
+
+```powershell
+python scripts\run_suite.py --config Release --repeats 3 --warmup 10 --iters 50 --prefault
+```
+
+> Tip (Windows/IME): if your terminal sometimes prefixes commands with a stray Hebrew character,
+> running `python ...` after activating the venv is the most reliable approach.
 
 Outputs:
 - `results/raw/*.json` (per-run raw JSON + captured stdout/stderr)
@@ -71,6 +78,11 @@ This project supports two primary CMake configurations:
 
 ---
 
+## VS Code CMake Tools (Windows)
+If VS Code shows “Unable to configure the project”, use the included `CMakePresets.json`:
+- In the Command Palette: **CMake: Select Configure Preset** → `msvc-x64`
+- Then: **CMake: Build** (or select **Build Preset**: `release`)
+
 ## Kernel Modes
 
 Kernels are selected with `--kernel` and fall into two categories:
@@ -81,6 +93,20 @@ Kernels are selected with `--kernel` and fall into two categories:
 - **Compute-oriented**: `flops`, `fma`, `dot`, `saxpy`
 
 - **Latency-oriented**: `latency` (pointer-chasing dependent-load sweep)
+
+## Status
+- **Implemented**: Memory bandwidth benchmark, Pointer-chasing latency benchmark, Compute benchmark (dot/saxpy) with correctness checks, Automated build/run/plot pipeline, Optimization experiment (MSVC flags).
+- **In progress**: Cross-architecture runs (pending access to ARM/other ISA).
+- **Planned**: Advanced blocked GEMM, Multithreading scaling.
+
+---
+
+## System Requirements
+- **OS**: Windows (MSVC), Linux (GCC/Clang), or macOS (Clang).
+- **Compiler**: C++17 compatible compiler.
+- **Python**: Python 3.8+ (for automation and plotting).
+- **Tools**: CMake (3.15+).
+- **Optional (for Profiling)**: `perf`, `valgrind`, `llvm-mca` (Linux/WSL only).
 
 ---
 
@@ -260,9 +286,9 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 ## Project Structure
 * `src/` – benchmark executable, STREAM kernels, sweep runner
 * `include/` – config, timers, kernel implementations, utilities, JSON output
-* `scripts/` – PowerShell runners and post-processing helpers
-* `results/` – saved outputs (JSON/CSV)
-* `plots/` – visualization assets (optional)
+* `scripts/` – Python runners, automation pipeline (`run_suite.py`), and plotting scripts
+* `results/` – saved outputs (JSON/CSV), system info, and profiling logs
+* `plots/` – visualization assets (Bandwidth and Latency graphs)
 * `.github/` – CI/CD and documentation templates
 
 ## Report

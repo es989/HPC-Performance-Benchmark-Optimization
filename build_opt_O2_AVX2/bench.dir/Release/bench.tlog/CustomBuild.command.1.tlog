@@ -1,0 +1,10 @@
+^C:\HPCPROJECT\HPC-PERFORMANCE-BENCHMARK-OPTIMIZATION\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/HPCProject/HPC-Performance-Benchmark-Optimization -BC:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX2 --check-stamp-file C:/HPCProject/HPC-Performance-Benchmark-Optimization/build_opt_O2_AVX2/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
