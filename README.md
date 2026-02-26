@@ -307,3 +307,12 @@ On non-Linux (e.g., Windows), the suite writes explicit `*_BLOCKED.txt` notes un
 * **Thermal throttling**: long sweeps can heat the CPU and change frequency.
 * **Memory pressure**: multi-array kernels need enough free RAM to avoid swapping/paging.
 * **Hardware-specific builds**: Release builds may be CPU-tuned on GCC/Clang; rebuild per machine.
+
+---
+
+## Contact & Feedback
+If you encounter any problems, have questions, or want to suggest fixes and improvements, feel free to reach out!
+
+- **Author:** Elishama Seri
+- **Email:** Elishamaseri@gmail.com
+- **GitHub:** [@es989](https://github.com/es989)
