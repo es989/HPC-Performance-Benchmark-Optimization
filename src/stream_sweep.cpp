@@ -71,24 +71,28 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         if (n == 0) continue;
 
         // Inputs/outputs (constant init => deterministic)
-        std::vector<double> A(n, 1.0);
-        std::vector<double> B(n, 2.0);
-        std::vector<double> C(n, 3.0);
+        std::vector<double> A(n);
+        std::vector<double> B(n);
+        std::vector<double> C(n);
         const double s = 3.0;
+
+        // First-touch NUMA parallel initialization
+        #pragma omp parallel for schedule(static)
+        for (long long i = 0; i < static_cast<long long>(n); ++i) {
+            A[i] = 1.0;
+            B[i] = 2.0;
+            C[i] = 3.0;
+        }
         
-        // Optional: prefault / pre-touch pages to avoid first-touch page faults
+        // Optional: prefault / pre-touch pages in parallel to preserve NUMA binding
         if (conf.prefault) {
             const std::size_t page_elems = 4096 / sizeof(double);
-            for (std::size_t idx = 0; idx < n; idx += page_elems) {
-                // volatile access to force page allocation
-                volatile double t = A[idx];
-                A[idx] = t;
-                volatile double u = B[idx];
-                B[idx] = u;
-                volatile double v = C[idx];
-                C[idx] = v;
+            #pragma omp parallel for schedule(static)
+            for (long long idx = 0; idx < static_cast<long long>(n); idx += static_cast<long long>(page_elems)) {
+                volatile double t = A[idx]; A[idx] = t;
+                volatile double u = B[idx]; B[idx] = u;
+                volatile double v = C[idx]; C[idx] = v;
             }
-            // small compiler barrier
             do_not_optimize_away(A[0]);
         }
 

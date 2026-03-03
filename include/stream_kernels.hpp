@@ -3,6 +3,14 @@
 
 #include <cstddef>
 
+#if defined(_MSC_VER)
+  #define RESTRICT __restrict
+#elif defined(__GNUC__) || defined(__clang__)
+  #define RESTRICT __restrict__
+#else
+  #define RESTRICT
+#endif
+
 /**
  * @brief STREAM-like operations for memory bandwidth measurement.
  *
@@ -64,24 +72,27 @@ using StreamKernelFn = void(*)(double* A, const double* B, const double* C, doub
  * @brief Copy kernel: A[i] = B[i]
  * Measures pure memory read/write bandwidth without arithmetic bottlenecks.
  */
-inline void kernel_copy(double* A, const double* B, const double*, double, std::size_t n) {
-    for (std::size_t i = 0; i < n; ++i) A[i] = B[i];
+inline void kernel_copy(double* RESTRICT A, const double* RESTRICT B, const double* RESTRICT, double, std::size_t n) {
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) A[i] = B[i];
 }
 
 /**
  * @brief Scale kernel: A[i] = s * B[i]
  * Adds a simple scalar multiplication to the memory copy.
  */
-inline void kernel_scale(double* A, const double* B, const double*, double s, std::size_t n) {
-    for (std::size_t i = 0; i < n; ++i) A[i] = s * B[i];
+inline void kernel_scale(double* RESTRICT A, const double* RESTRICT B, const double* RESTRICT, double s, std::size_t n) {
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) A[i] = s * B[i];
 }
 
 /**
  * @brief Add kernel: A[i] = B[i] + C[i]
  * Measures bandwidth when reading from two separate memory streams and writing to a third.
  */
-inline void kernel_add(double* A, const double* B, const double* C, double, std::size_t n) {
-    for (std::size_t i = 0; i < n; ++i) A[i] = B[i] + C[i];
+inline void kernel_add(double* RESTRICT A, const double* RESTRICT B, const double* RESTRICT C, double, std::size_t n) {
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) A[i] = B[i] + C[i];
 }
 
 /**
@@ -89,8 +100,9 @@ inline void kernel_add(double* A, const double* B, const double* C, double, std:
  * The most complex STREAM kernel, combining FMA (Fused Multiply-Add) with 3 memory streams.
  * Often used as the primary metric for system memory bandwidth.
  */
-inline void kernel_triad(double* A, const double* B, const double* C, double s, std::size_t n) {
-    for (std::size_t i = 0; i < n; ++i) A[i] = B[i] + s * C[i];
+inline void kernel_triad(double* RESTRICT A, const double* RESTRICT B, const double* RESTRICT C, double s, std::size_t n) {
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) A[i] = B[i] + s * C[i];
 }
 
 /**

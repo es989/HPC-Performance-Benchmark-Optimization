@@ -65,17 +65,31 @@ std::size_t bytes_to_elems(std::uint64_t bytes) {
 double compute_fma_kernel(std::vector<double>& a, int inner) {
     const double alpha = 1.0000000001;
     const double beta = 0.0000000001;
+    const std::size_t n = a.size();
+    double* const data = a.data();
 
-    for (double& v : a) {
-        double x = v;
-        for (int k = 0; k < inner; ++k) {
-            // std::fma maps to hardware FMA instructions if available.
-            x = std::fma(x, alpha, beta);
+    // Parallelized outer loop: each core owns an independent slice.
+    // Inner loop unrolled x4 to expose 4 independent FMA chains,
+    // masking the hardware FMA latency (typically 4-5 cycles) and
+    // saturating all available execution ports.
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) {
+        double x0 = data[i], x1 = data[i], x2 = data[i], x3 = data[i];
+        const int inner4 = (inner / 4) * 4;
+        for (int k = 0; k < inner4; k += 4) {
+            x0 = std::fma(x0, alpha, beta);
+            x1 = std::fma(x1, alpha, beta);
+            x2 = std::fma(x2, alpha, beta);
+            x3 = std::fma(x3, alpha, beta);
         }
-        v = x;
+        // Drain remaining iterations on x0 for correctness
+        for (int k = inner4; k < inner; ++k) {
+            x0 = std::fma(x0, alpha, beta);
+        }
+        data[i] = x0 + x1 + x2 + x3;
     }
 
-    const std::size_t stride = std::max<std::size_t>(1, a.size() / 1024);
+    const std::size_t stride = std::max<std::size_t>(1, n / 1024);
     return Validator::checksum_sampled(a, stride);
 }
 
@@ -94,17 +108,28 @@ double compute_fma_kernel(std::vector<double>& a, int inner) {
 double compute_flops_kernel(std::vector<double>& a, int inner) {
     const double alpha = 1.0000000001;
     const double beta = 0.0000000001;
+    const std::size_t n = a.size();
+    double* const data = a.data();
 
-    for (double& v : a) {
-        double x = v;
-        for (int k = 0; k < inner; ++k) {
-            // Explicit mul + add. May be fused by the compiler.
-            x = x * alpha + beta;
+    // Parallelized with 4 independent accumulators per element to
+    // expose instruction-level parallelism and saturate multiply+add ports.
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) {
+        double x0 = data[i], x1 = data[i], x2 = data[i], x3 = data[i];
+        const int inner4 = (inner / 4) * 4;
+        for (int k = 0; k < inner4; k += 4) {
+            x0 = x0 * alpha + beta;
+            x1 = x1 * alpha + beta;
+            x2 = x2 * alpha + beta;
+            x3 = x3 * alpha + beta;
         }
-        v = x;
+        for (int k = inner4; k < inner; ++k) {
+            x0 = x0 * alpha + beta;
+        }
+        data[i] = x0 + x1 + x2 + x3;
     }
 
-    const std::size_t stride = std::max<std::size_t>(1, a.size() / 1024);
+    const std::size_t stride = std::max<std::size_t>(1, n / 1024);
     return Validator::checksum_sampled(a, stride);
 }
 
@@ -123,7 +148,8 @@ double compute_flops_kernel(std::vector<double>& a, int inner) {
  */
 double compute_dot_kernel(const double* x, const double* y, std::size_t n) {
     double sum = 0.0;
-    for (std::size_t i = 0; i < n; ++i) {
+    #pragma omp parallel for reduction(+:sum) schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) {
         sum += x[i] * y[i];
     }
     return sum;
@@ -144,7 +170,8 @@ double compute_dot_kernel(const double* x, const double* y, std::size_t n) {
  * @param n Number of elements to process.
  */
 void compute_saxpy_kernel(double a, const double* x, const double* y, double* out, std::size_t n) {
-    for (std::size_t i = 0; i < n; ++i) {
+    #pragma omp parallel for schedule(static)
+    for (long long i = 0; i < static_cast<long long>(n); ++i) {
         out[i] = a * x[i] + y[i];
     }
 }
@@ -209,10 +236,13 @@ void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::stri
             if (use_aligned) {
                 a_aligned = benchmark::AlignedBuffer<double>(n, alignment);
                 a_ptr = a_aligned.data();
-                for (std::size_t i = 0; i < n; ++i) a_ptr[i] = 1.0;
+                #pragma omp parallel for schedule(static)
+                for (long long i = 0; i < static_cast<long long>(n); ++i) a_ptr[i] = 1.0;
             } else {
-                a.assign(n, 1.0);
+                a.assign(n, 0.0); // Allocate but don't commit heavily on core 0
                 a_ptr = a.data();
+                #pragma omp parallel for schedule(static)
+                for (long long i = 0; i < static_cast<long long>(n); ++i) a_ptr[i] = 1.0;
             }
             return;
         }
@@ -223,23 +253,32 @@ void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::stri
             y_aligned = benchmark::AlignedBuffer<double>(n, alignment);
             x_ptr = x_aligned.data();
             y_ptr = y_aligned.data();
-            for (std::size_t i = 0; i < n; ++i) {
+            #pragma omp parallel for schedule(static)
+            for (long long i = 0; i < static_cast<long long>(n); ++i) {
                 x_ptr[i] = 1.0;
                 y_ptr[i] = 2.0;
             }
             if (kind == "saxpy") {
                 out_aligned = benchmark::AlignedBuffer<double>(n, alignment);
                 out_ptr = out_aligned.data();
-                for (std::size_t i = 0; i < n; ++i) out_ptr[i] = 0.0;
+                #pragma omp parallel for schedule(static)
+                for (long long i = 0; i < static_cast<long long>(n); ++i) out_ptr[i] = 0.0;
             }
         } else {
-            x.assign(n, 1.0);
-            y.assign(n, 2.0);
+            x.assign(n, 0.0);
+            y.assign(n, 0.0);
             x_ptr = x.data();
             y_ptr = y.data();
+            #pragma omp parallel for schedule(static)
+            for (long long i = 0; i < static_cast<long long>(n); ++i) {
+                x_ptr[i] = 1.0;
+                y_ptr[i] = 2.0;
+            }
             if (kind == "saxpy") {
                 out.assign(n, 0.0);
                 out_ptr = out.data();
+                #pragma omp parallel for schedule(static)
+                for (long long i = 0; i < static_cast<long long>(n); ++i) out_ptr[i] = 0.0;
             }
         }
     };

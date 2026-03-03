@@ -88,12 +88,28 @@ endif()
 if(MSVC)
   # Release in MSVC already implies optimizations; be explicit for clarity.
   target_compile_options(bench PRIVATE
-    $<$<CONFIG:Release>:/O2>
+    $<$<CONFIG:Release>:/O2 /openmp /fp:fast>
     $<$<CONFIG:Debug>:/Od /Zi>
   )
 else()
   target_compile_options(bench PRIVATE
-    $<$<CONFIG:Release>:-O3 -march=native>
-    $<$<CONFIG:Debug>:-O0 -g>
+    $<$<CONFIG:Release>:-O3 -march=native -fopenmp -ffast-math>
+    $<$<CONFIG:Debug>:-O0 -g -fopenmp>
   )
 endif()
+
+# ------------------------------------------------------------
+# Link-Time Optimization (LTO / IPO)
+# Enables cross-TU inlining and dead code elimination at link time.
+# ------------------------------------------------------------
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
+if(ipo_supported)
+  set_property(TARGET bench PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+endif()
+
+# ------------------------------------------------------------
+# OpenMP (Multi-threading support)
+# ------------------------------------------------------------
+find_package(OpenMP REQUIRED)
+target_link_libraries(bench PRIVATE OpenMP::OpenMP_CXX)

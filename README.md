@@ -1,6 +1,6 @@
 ﻿# HPC-Performance-Benchmark-Optimization
 
-A C++17 microbenchmark suite for measuring **memory bandwidth** across the memory hierarchy (L1/L2/LLC/DRAM) using STREAM-like kernels, with robust statistics exported to JSON.
+A C++17 **multi-threaded** microbenchmark suite for measuring **memory bandwidth** and **compute throughput** across the full memory hierarchy (L1/L2/LLC/DRAM) using OpenMP-parallelized STREAM-like kernels, NUMA-aware initialization, SIMD-hinted arithmetic, and Link-Time Optimization. Results are exported to JSON with full statistical coverage (median, P95, stddev, min, max).
 
 ---
 
@@ -8,38 +8,65 @@ A C++17 microbenchmark suite for measuring **memory bandwidth** across the memor
 
 ### Build (out-of-source CMake)
 
-```bash
-mkdir build
+**Windows (PowerShell)**:
+```powershell
+mkdir build -ErrorAction SilentlyContinue
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
 ```
 
-On Windows/MSVC, you can also build an unoptimized Debug binary during development:
+**Linux / macOS**:
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
 
+> **OpenMP is required.**
+> - **GCC/Clang**: included by default.
+> - **MSVC (Windows)**: OpenMP 2.0 runtime is bundled with Visual Studio.
+>   *(Note: This project uses compatible OpenMP pragmas for MSVC support)*.
+
+**Debug Build (Slow, for development)**:
 ```powershell
 cd build
 cmake --build . --config Debug
 ```
 
 ### Quick sanity check (2 seconds)
-Use a tiny run to verify the binary works and produces output:
 
-```bash
-./bench --kernel copy --warmup 2 --iters 5
+```powershell
+# Windows
+.\build\Release\bench.exe --kernel copy --warmup 2 --iters 5
+
+# Linux / Mac
+./build/bench --kernel copy --warmup 2 --iters 5
 ```
 
-### End-to-end suite (recommended)
-This runs a minimal, reproducible pipeline:
-**build → repeated runs → aggregate → generate 2 plots**.
+### Control OpenMP thread count
+All bandwidth and compute kernels are multi-threaded via OpenMP. Set the thread count with an environment variable:
 
-Activate the venv (recommended) and install Python plotting deps once:
+```bash
+# Linux / macOS
+export OMP_NUM_THREADS=8
+./bench --kernel triad --warmup 50 --iters 200 --prefault
+
+# Windows PowerShell
+$env:OMP_NUM_THREADS = "8"
+.\bench.exe --kernel triad --warmup 50 --iters 200 --prefault
+```
+
+> For DRAM bandwidth tests, set `OMP_NUM_THREADS` to your physical core count to saturate the memory controller.
+
+### End-to-end suite (recommended)
+
+**build → repeated runs → aggregate → generate 2 plots**
+
+Activate the venv and install Python deps once:
 
 ```powershell
 & .\.venv\Scripts\Activate.ps1
-```
-
-```powershell
 python -m pip install -r scripts\requirements.txt
 ```
 
@@ -47,34 +74,66 @@ python -m pip install -r scripts\requirements.txt
 python scripts\run_suite.py --config Release --repeats 3 --warmup 10 --iters 50 --prefault
 ```
 
-> Tip (Windows/IME): if your terminal sometimes prefixes commands with a stray Hebrew character,
-> running `python ...` after activating the venv is the most reliable approach.
-
 Outputs:
-- `results/raw/*.json` (per-run raw JSON + captured stdout/stderr)
-- `results/summary/*_agg.json` + `results/summary/*_agg.csv` (aggregated)
-- `plots/*.png` (bandwidth vs size + latency vs size)
+- `results/raw/*.json` — per-run raw JSON + captured stdout/stderr
+- `results/summary/*_agg.json` + `results/summary/*_agg.csv` — aggregated statistics
+- `plots/*.png` — bandwidth vs size + latency vs size
 
 ### Run a stable baseline (recommended)
 
-```bash
-./bench --kernel triad --warmup 50 --iters 200 --out results.json
+```powershell
+# Windows PowerShell
+$env:OMP_NUM_THREADS = "8"
+.\build\Release\bench.exe --kernel triad --warmup 50 --iters 200 --prefault --out results.json
 ```
+
+```bash
+# Linux / macOS
+OMP_NUM_THREADS=8 ./bench --kernel triad --warmup 50 --iters 200 --prefault --out results.json
+```
+
 *Output is written to `--out` (default: `results.json`).*
+
+---
+
+## Interpreting Results
+
+### 1. Memory Bandwidth (STREAM Kernels)
+Measures how fast the system reads/writes data from memory.
+- **`copy`** ($A[i] = B[i]$): Pure memory movement.
+- **`scale`** ($A[i] = s \times B[i]$): Memory with light arithmetic.
+- **`add`** ($A[i] = B[i] + C[i]$): Higher memory traffic (2 reads, 1 write).
+- **`triad`** ($A[i] = B[i] + s \times C[i]$): The standard metric for system memory performance.
+
+### 2. Compute Throughput (GFLOP/s)
+Measures raw floating-point calculation power (fitting in cache).
+- **`flops`**: Separated multiply and add instructions.
+- **`fma`**: Uses **Fused Multiply-Add** (AVX2/AVX-512) for peak throughput.
+- **`dot`**: Dot Product (SIMD reduction).
+- **`saxpy`**: Vector scale-add (BLAS Level 1).
+
+### 3. Memory Latency
+- **`latency`**: Pointer chasing ($node = node \to next$).
+    *   **What it does**: Traverses a randomized linked list. The CPU *must* wait for the current node to load before it can find the address of the next node. This defeats hardware prefetchers (which try to guess and load data ahead of time).
+    *   **Why we check it**: To measure the pure hardware response time (latency) of each memory tier, unmasked by parallelism or prefetching.
+    - **~1-2ns**: L1 Cache
+    - **~3-5ns**: L2 Cache
+    - **~10-20ns**: L3 Cache (LLC)
+    - **~60-100ns+**: Main Memory (DRAM)
 
 ---
 
 ## Build Modes
 
-This project supports two primary CMake configurations:
+| Config | Compiler Flags | Purpose |
+| :--- | :--- | :--- |
+| **Debug** | `-O0 -g -fopenmp` / `/Od /Zi` | Development, correctness checks |
+| **Release** | `-O3 -march=native -fopenmp -ffast-math` + LTO | Real performance measurement |
 
-- **Debug**  
-  Built with `cmake --build . --config Debug`  
-  Slower (no `-O3`), includes debug info, best for development and checking correctness.
-
-- **Release**  
-  Built with `cmake --build . --config Release` (after `cmake .. -DCMAKE_BUILD_TYPE=Release`)  
-  Optimized; this is what you should use for real performance measurements.
+**Release-only features:**
+- `-march=native` selects AVX, AVX2, or AVX-512 instructions for the current CPU.
+- `-ffast-math` (`/fp:fast` on MSVC) allows the compiler to reassociate floating-point reductions and fuse multiply-add chains.
+- **Link-Time Optimization (LTO)** is enabled via `check_ipo_supported()` and `INTERPROCEDURAL_OPTIMIZATION_RELEASE`, allowing the linker to inline and optimize across translation units.
 
 ---
 
@@ -85,33 +144,75 @@ If VS Code shows “Unable to configure the project”, use the included `CMakeP
 
 ## Kernel Modes
 
-Kernels are selected with `--kernel` and fall into two categories:
+Kernels are selected with `--kernel`:
 
-- **Memory-oriented**: `copy`, `scale`, `add`, `triad`  
-  Aliases: `stream_copy`, `stream_scale`, `stream_add`, `stream_triad`.
+### Memory-Bandwidth Kernels
+`copy`, `scale`, `add`, `triad` (aliases: `stream_copy`, `stream_scale`, `stream_add`, `stream_triad`)
 
-- **Compute-oriented**: `flops`, `fma`, `dot`, `saxpy`
+All four run as `#pragma omp parallel for schedule(static)` across all threads with `RESTRICT`-qualified pointers to enable full compiler vectorization.
 
-- **Latency-oriented**: `latency` (pointer-chasing dependent-load sweep)
+| Kernel | Operation | Bytes/Element |
+| :--- | :--- | :--- |
+| Copy  | `A[i] = B[i]` | 2× |
+| Scale | `A[i] = s * B[i]` | 2× |
+| Add   | `A[i] = B[i] + C[i]` | 3× |
+| Triad | `A[i] = B[i] + s * C[i]` | 3× |
+
+### Compute-Bound Kernels
+`fma`, `flops`
+
+Both kernels use `#pragma omp parallel for schedule(static)` with a **4-accumulator unrolled inner loop** per element. This exposes 4 independent FMA dependency chains simultaneously, masking the 4–5 cycle hardware FMA execution latency and saturating all available FMA execution ports across all cores.
+
+### BLAS Level-1 Kernels
+`dot`, `saxpy`
+
+- `dot` — parallel dot product with `#pragma omp parallel for reduction(+:sum) schedule(static)` for thread-safe partial sum aggregation.
+- `saxpy` — parallel `out[i] = a * x[i] + y[i]` with `#pragma omp parallel for schedule(static)`.
+
+### Latency Kernel
+`latency`
+
+Randomized pointer-chasing sweep from 4KB to 256MB using `alignas(64)` padded nodes and a `std::mt19937`-shuffled access pattern that defeats all hardware prefetchers. Inherently serial by design — measures true dependent-load latency per cache tier.
+
+---
+
+## Architecture Overview
+
+### OpenMP Parallelism
+Every kernel except `latency` is fully multi-threaded via OpenMP 4.0+. All loops use `schedule(static)` for deterministic, balanced chunk assignment matching the NUMA initialization layout.
+
+### NUMA-Aware First-Touch Initialization
+All benchmark arrays are initialized inside `#pragma omp parallel for schedule(static)` blocks **before** measurement begins. This triggers the OS first-touch policy, assigning physical memory pages to the NUMA node and CPU socket that will later process them. Applied in both `stream_sweep.cpp` and `compute_bench.cpp`. The optional `--prefault` pass is also parallelized to preserve NUMA binding.
+
+### SIMD Vectorization
+`RESTRICT`-qualified pointer macros (`__restrict__` GCC/Clang, `__restrict` MSVC) are applied to all kernel arguments in `stream_kernels.hpp`. This guarantees the compiler generates packed AVX/AVX2/AVX-512 instructions without aliasing-check prologues. `#pragma omp simd` is avoided to maintain compatibility with MSVC's OpenMP 2.0 implementation.
+
+### FMA Throughput Optimization
+`compute_fma_kernel` and `compute_flops_kernel` use a 4-accumulator unrolled inner loop, replacing the previous single-scalar serial chain. This is required to measure FMA **throughput** (not latency). A single-scalar chain stalls every 4–5 cycles; 4 independent chains can issue 1 FMA per cycle per port.
+
+### Aligned Memory (`include/aligned_buffer.hpp`)
+`benchmark::AlignedBuffer<T>` is a move-only RAII allocator providing exact 64-byte aligned storage. The constructor validates that the requested alignment is a power of 2 before dispatching to `posix_memalign` (POSIX) or `_aligned_malloc` (Windows).
+
+---
 
 ## Status
-- **Implemented**: Memory bandwidth benchmark, Pointer-chasing latency benchmark, Compute benchmark (dot/saxpy) with correctness checks, Automated build/run/plot pipeline, Optimization experiment (MSVC flags).
+- **Implemented**: Multi-threaded STREAM bandwidth sweep (all 4 kernels), pointer-chasing latency benchmark, multi-threaded FMA/FLOPS compute kernels with 4-accumulator unrolling, multi-threaded Dot Product (`reduction`) and SAXPY, NUMA-aware parallel first-touch initialization, SIMD-hinted kernels with RESTRICT aliasing macros, 64-byte aligned memory allocator with power-of-2 validation, LTO + `-ffast-math` in Release builds, automated build/run/plot pipeline, correctness validation (sampled + full checksum).
 - **In progress**: Cross-architecture runs (pending access to ARM/other ISA).
-- **Planned**: Advanced blocked GEMM, Multithreading scaling.
+- **Planned**: Advanced blocked GEMM, Loaded-latency benchmark (concurrent stream saturation + pointer-chase timing).
 
 ---
 
 ## System Requirements
 - **OS**: Windows (MSVC), Linux (GCC/Clang), or macOS (Clang).
-- **Compiler**: C++17 compatible compiler.
-- **Python**: Python 3.8+ (for automation and plotting).
-- **Tools**: CMake (3.15+).
-- **Optional (for Profiling)**: `perf`, `valgrind`, `llvm-mca` (Linux/WSL only).
+- **Compiler**: C++17-compatible compiler **with OpenMP runtime** (GCC ≥ 7, Clang ≥ 6, MSVC 2019+).
+- **Python**: 3.8+ (for automation and plotting).
+- **CMake**: 3.10+.
+- **Optional (profiling)**: `perf`, `valgrind`, `llvm-mca` (Linux/WSL only).
 
 ---
 
 ## Context & Purpose
-This project provides a reproducible environment to quantify system performance across different memory hierarchies (L1/L2/LLC/DRAM) and compute kernels. It helps identify bottlenecks and the impact of targeted optimizations. Results are written to a machine-readable JSON file for post-processing and plotting.
+This project provides a reproducible environment to approach and quantify theoretical hardware limits across the memory hierarchy and compute units. STREAM kernels saturate the memory controller across all threads. FMA kernels target peak GFLOP/s via multi-threaded accumulator-unrolled chains. The latency sweep profiles every cache tier unambiguously with prefetcher-defeating access patterns. All measurements are anchored by correctness validation and noise-resistant statistical reporting.
 
 ---
 
@@ -120,18 +221,18 @@ Defaults are defined in `include/config.hpp`.
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--kernel` | Kernel to run: `copy`, `scale`, `add`, `triad` | `copy` |
-| `--size` | Dataset/problem size string (used by some modes) | `64MB` |
-| `--threads` | Number of worker threads (must be >= 1) | `1` |
+| `--kernel` | Kernel: `copy`, `scale`, `add`, `triad`, `fma`, `flops`, `dot`, `saxpy`, `latency` | `copy` |
+| `--size` | Problem size string for compute kernels (e.g., `64MB`, `256MiB`) | `64MB` |
 | `--iters` | Measured iterations per sweep point | `100` |
-| `--warmup` | Unmeasured warmup iterations | `10` |
+| `--warmup` | Unmeasured warmup iterations (primes caches and DVFS) | `10` |
 | `--out` | Output JSON path | `results.json` |
-| `--seed` | RNG seed | `14` |
-| `--prefault` | Pre-touch pages to reduce first-touch/page-fault noise | off |
-| `--aligned` | Use 64B-aligned allocations where supported | off |
-| `--help` | Print help |  |
+| `--seed` | RNG seed for latency benchmark shuffle | `14` |
+| `--prefault` | Pre-touch pages (in parallel) to eliminate first-touch noise | off |
+| `--aligned` | Use 64B-aligned allocations via `AlignedBuffer` | off |
+| `--help` | Print help | |
 
-> **Note:** For stable percentile statistics, prefer `--iters 200` (or higher), especially on Windows.
+> **Thread count**: controlled by the `OMP_NUM_THREADS` environment variable, not a CLI flag.
+> **Stable statistics**: prefer `--iters 200` or higher, especially on Windows.
 
 ---
 
@@ -151,30 +252,28 @@ Each sweep point includes:
 ---
 
 ## Methodology (The Performance Contract)
-Microbenchmarks are sensitive to system noise. This project aims to make results comparable by:
+Microbenchmarks are sensitive to system noise. This project makes results comparable and accurate by:
 
-* **Warmup**: primes caches and stabilizes DVFS (frequency scaling)
-* **Statistical rigor**: reports Median (typical) + P95 (tail) + Stddev (variance)
-* **Hardware control**: pinning reduces core migration effects
-* **Optional prefaulting**: can move first-touch page faults out of the timed region
+* **NUMA First-Touch**: arrays initialized in `#pragma omp parallel for schedule(static)` blocks that match the kernel's thread layout, ensuring physical pages are local to the processing cores.
+* **Parallel Prefault** (`--prefault`): page pre-commitment runs in parallel to preserve NUMA binding.
+* **Warmup**: primes caches and stabilizes DVFS (CPU frequency scaling) before measurement.
+* **Compiler Barriers**: `clobber_memory()` is placed before and after each kernel invocation to prevent instruction hoisting across `Timer` boundaries.
+* **Anti-DCE checksums**: sampled array checksums are passed to `do_not_optimize_away()` after every iteration to block the compiler from eliding the kernel.
+* **Statistical rigor**: reports Median (typical), P95 (tail), Stddev (variance/stability), Min/Max (outlier detection).
 
 ### How to get stable measurements
-If different runs look "best" at different sizes, that typically indicates OS noise (interrupts, scheduling jitter, DVFS, core migration).
 
-**Recommended run settings**
-* **Windows / WSL**: `--warmup 50 --iters 200` (or higher)
-* **Linux**: defaults often work, but higher iters improves percentile stability
+| Platform | Recommended command |
+| :--- | :--- |
+| Linux | `taskset -c 0-7 OMP_NUM_THREADS=8 ./bench --kernel triad --warmup 50 --iters 200 --prefault` |
+| Windows | `set OMP_NUM_THREADS=8 && bench.exe --kernel triad --warmup 50 --iters 200 --prefault` |
 
-**Stability checklist (what usually matters)**
-- Use warmup (`--warmup`) to stabilize cache/DVFS.
-- Increase measured iters (`--iters`) for stable median/P95.
-- Pin to one core (affinity) to reduce core migration.
-- Use `--prefault` if you suspect first-touch / page-fault spikes.
-
-For a copy/paste Windows command (affinity + high priority + prefault), see **Stable runs (Windows / low jitter)** below.
-
-**Best practice: multiple trials**
-Run 3–5 trials and report median-of-medians per size for reliable comparisons.
+**Stability checklist:**
+- Set `OMP_NUM_THREADS` to your physical core count (avoid hyperthreads for bandwidth tests).
+- Use `--warmup 50` or higher to stabilize frequency (DVFS) and cache state.
+- Use `--iters 200` or higher for statistically stable median/P95.
+- Use `--prefault` to move page-fault latency outside the timed region.
+- Run 3–5 trials and report median-of-medians per size for reproducible comparisons.
 
 <!-- BENCH_STABILITY_START -->
 ## Stable runs (Windows / low jitter)
@@ -185,19 +284,21 @@ Microbenchmarks are sensitive to OS scheduling jitter. On Windows, use CPU pinni
 From `build\Release`:
 
 ```bat
-C:\Windows\System32\cmd.exe /c start "" /wait /affinity 1 /high bench.exe --kernel triad --prefault --warmup 50 --iters 200 --out ..\..\results\triad_aff1.json
+set OMP_NUM_THREADS=8
+C:\Windows\System32\cmd.exe /c start "" /wait /affinity FF /high bench.exe --kernel triad --prefault --warmup 50 --iters 200 --out ..\..\results\triad_aff1.json
 ```
 
 Notes:
-- `/affinity 1` pins to CPU0 (use `2` for CPU1, `4` for CPU2, etc.)
+- `/affinity FF` pins to the first 8 logical processors (adjust mask for your core count)
+- Set `OMP_NUM_THREADS` to your physical core count before running
 - `--warmup N` is not timed (stabilizes CPU/cache/DVFS)
 - `--iters N` is timed per sweep point (higher = more stable percentiles)
-- `--prefault` pre-touches pages to reduce first-touch / page-fault noise
+- `--prefault` pre-touches pages in parallel, preserving NUMA binding
 
 Linux equivalent:
 
 ```bash
-taskset -c 0 ./bench --kernel triad --prefault --warmup 50 --iters 200 --out results/triad_core0.json
+taskset -c 0-7 OMP_NUM_THREADS=8 ./bench --kernel triad --prefault --warmup 50 --iters 200 --out results/triad_core0-7.json
 ```
 <!-- BENCH_STABILITY_END -->
 
@@ -271,7 +372,9 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 | **L2 cache** | ~100–200 |
 | **LLC** | ~30–100 |
 | **DRAM (1 thread)** | ~10–25 |
-| **DRAM (multi-thread)** | ~20–50+ |
+| **DRAM (multi-thread, all cores)** | ~20–80+ |
+
+> Actual multi-thread DRAM numbers depend on memory channel count, JEDEC spec (DDR4/DDR5), and NUMA topology.
 
 ---
 
@@ -284,12 +387,48 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 ---
 
 ## Project Structure
-* `src/` – benchmark executable, STREAM kernels, sweep runner
-* `include/` – config, timers, kernel implementations, utilities, JSON output
-* `scripts/` – Python runners, automation pipeline (`run_suite.py`), and plotting scripts
-* `results/` – saved outputs (JSON/CSV), system info, and profiling logs
-* `plots/` – visualization assets (Bandwidth and Latency graphs)
-* `.github/` – CI/CD and documentation templates
+
+```
+src/
+  main.cpp           - CLI dispatch (kernel routing)
+  compute_bench.cpp  - FMA/Flops/Dot/SAXPY (multi-threaded, 4-accumulator unrolling)
+  stream_sweep.cpp   - STREAM bandwidth sweep (NUMA-aware parallel init)
+  latency_bench.cpp  - Pointer-chasing latency sweep (serial by design)
+  sys_info.cpp       - System info collection
+
+include/
+  aligned_buffer.hpp - RAII 64-byte aligned allocator (power-of-2 validated)
+  stream_kernels.hpp - STREAM kernels with RESTRICT macros + OpenMP SIMD
+  config.hpp         - CLI argument parsing
+  timer.hpp          - High-resolution timer
+  utils.hpp          - Checksum, statistics, compiler barriers
+  results.hpp        - BenchmarkResult structures + JSON serialization
+  size_parse.hpp     - Human-readable size string parser ("64MB", "256MiB")
+  sys_info.hpp       - System info structures
+  nlohmann/json.hpp  - Embedded JSON library
+
+scripts/
+  run_suite.py                - End-to-end automation pipeline
+  aggregate_runs.py           - Multi-run aggregation
+  plot_bandwidth_vs_size.py   - Bandwidth waterfall plots (clean/research modes)
+  plot_latency_vs_size.py     - Latency vs size plots
+  plot_results.py             - Minimal pandas + matplotlib plot
+  run_perf_stat.py            - Linux perf stat wrapper
+  run_valgrind_cachegrind.py  - Valgrind/Cachegrind wrapper
+  run_llvm_mca.py             - LLVM-MCA pipeline analysis wrapper
+  run_opt_experiment.py       - Compiler flag optimization experiment
+  run_bench_runs.ps1          - PowerShell multi-run script
+
+results/
+  raw/       - Per-run JSON + stdout/stderr captures
+  summary/   - Aggregated JSON + CSV
+  system/    - system.json CPU info snapshot
+  perf/      - perf stat outputs (or BLOCKED.txt on Windows)
+  valgrind/  - Cachegrind outputs (or BLOCKED.txt on Windows)
+  llvm-mca/  - LLVM-MCA reports (or BLOCKED.txt on Windows)
+
+plots/       - Generated PNG + CSV visualizations
+```
 
 ## Report
 See `REPORT.md` for a minimal, reproducible run recipe and the artifact contract (where outputs live and what they mean).
@@ -303,10 +442,12 @@ On non-Linux (e.g., Windows), the suite writes explicit `*_BLOCKED.txt` notes un
 ---
 
 ## Limitations & Warnings
-* **WSL2**: performance counters via `perf` may be limited.
-* **Thermal throttling**: long sweeps can heat the CPU and change frequency.
-* **Memory pressure**: multi-array kernels need enough free RAM to avoid swapping/paging.
-* **Hardware-specific builds**: Release builds may be CPU-tuned on GCC/Clang; rebuild per machine.
+* **WSL2**: `perf` hardware counters may be limited or unavailable.
+* **Thermal throttling**: long sweeps can heat the CPU and reduce frequency; use `--warmup` to stabilize beforehand.
+* **Memory pressure**: multi-array kernels (Triad, Add) need enough free RAM to avoid swapping/paging.
+* **Hardware-specific builds**: Release binaries with `-march=native` are CPU-tuned; rebuild on each target machine.
+* **Hyperthreading**: for maximum memory bandwidth, set `OMP_NUM_THREADS` = physical core count, not logical thread count.
+* **stream_sweep OOM**: `std::vector` allocations in `run_stream_sweep` are not wrapped in try/catch; extremely large arrays may terminate ungracefully if the system runs out of memory.
 
 ---
 

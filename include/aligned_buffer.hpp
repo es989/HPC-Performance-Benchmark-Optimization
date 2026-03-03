@@ -26,6 +26,9 @@ public:
         : ptr_(nullptr), n_(n), alignment_(alignment) {
         if (n_ == 0) return;
         if (alignment_ == 0) alignment_ = alignof(T);
+        // Enforce power-of-2: posix_memalign/MSVC both require this.
+        if ((alignment_ & (alignment_ - 1)) != 0)
+            throw std::invalid_argument("AlignedBuffer: alignment must be a power of 2");
 
         const std::size_t bytes = n_ * sizeof(T);
 
