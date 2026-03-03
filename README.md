@@ -413,7 +413,7 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 
 ---
 
-## 📂 Project Architecture
+## Project Architecture
 
 ### Root Files
 *   **`CMakeLists.txt`**: Build configuration (C++17, `-O3`, `-march=native`, OpenMP).
