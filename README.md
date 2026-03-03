@@ -1,6 +1,20 @@
 ﻿# HPC-Performance-Benchmark-Optimization
 
-A C++17 **multi-threaded** microbenchmark suite for measuring **memory bandwidth** and **compute throughput** across the full memory hierarchy (L1/L2/LLC/DRAM) using OpenMP-parallelized STREAM-like kernels, NUMA-aware initialization, SIMD-hinted arithmetic, and Link-Time Optimization. Results are exported to JSON with full statistical coverage (median, P95, stddev, min, max).
+A C++17 **multi-threaded** microbenchmark suite for measuring **memory bandwidth**, **memory latency**, and **compute throughput** across the full memory hierarchy (L1/L2/LLC/DRAM).
+
+## 🚀 Project Overview
+
+This project is designed to measure and illustrate the theoretical hardware limits of a machine (or server) in three key areas:
+
+1.  **Memory Bandwidth**: How fast the system can move data from memory (GB/s).
+2.  **Memory Latency**: How long it takes to fetch a single datum from memory/cache (ns or cycles).
+3.  **Compute Throughput**: How many floating-point calculations the CPU can perform (GFLOP/s).
+
+**Industrial-Grade Design:**
+*   **Single Binary**: Switches "modes" via CLI (e.g., `--kernel stream`/`latency`/`compute`).
+*   **JSON Output**: Generates structured, parsable logs for easy analysis.
+*   **Automation Suite**: Scripts for running experiment suites, result collection, and integration with analysis tools like `perf`, `valgrind`, and `llvm-mca`.
+*   **Organized Results**: Dedicated folders for `raw`, `summary`, `perf`, `valgrind`, and `llvm-mca` outputs.
 
 ---
 
@@ -195,10 +209,23 @@ All benchmark arrays are initialized inside `#pragma omp parallel for schedule(s
 
 ---
 
+## Key Strengths & Design Philosophy
+*   **Measurement Purity**: Usage of high-resolution timers, `clobber_memory()` barriers, and anti-DCE (Dead Code Elimination) checksums ensures we measure the code, not the compiler's optimizations.
+*   **Memory Semantics**: Strict 64-byte alignment and padding prevents cache-line straddling.
+*   **True Latency**: The pointer-chasing benchmark uses `std::mt19937` randomization to effectively defeat hardware prefetchers.
+*   **Tooling Integration**: Built-in support for `perf` (counters), `valgrind` (cache simulation), and `llvm-mca` (static analysis).
+
 ## Status
-- **Implemented**: Multi-threaded STREAM bandwidth sweep (all 4 kernels), pointer-chasing latency benchmark, multi-threaded FMA/FLOPS compute kernels with 4-accumulator unrolling, multi-threaded Dot Product (`reduction`) and SAXPY, NUMA-aware parallel first-touch initialization, SIMD-hinted kernels with RESTRICT aliasing macros, 64-byte aligned memory allocator with power-of-2 validation, LTO + `-ffast-math` in Release builds, automated build/run/plot pipeline, correctness validation (sampled + full checksum).
-- **In progress**: Cross-architecture runs (pending access to ARM/other ISA).
-- **Planned**: Advanced blocked GEMM, Loaded-latency benchmark (concurrent stream saturation + pointer-chase timing).
+- **Implemented**: 
+    - Full multi-threaded STREAM suite (Copy, Scale, Add, Triad).
+    - FMA/FLOPS compute kernels with **4-accumulator unrolling** (fixing the single-accumulator latency bottleneck).
+    - Latency pointer-chasing sweep.
+    - NUMA-aware parallel initialization ("first-touch").
+    - Automated build/run/plot pipeline.
+- **In Progress / Planned**: 
+    - **Compute Optimization**: Extend `RESTRICT` macros to compute kernels (currently only on STREAM) to further aid auto-vectorization.
+    - **Cross-Architecture**: Verification on ARM/non-x86 ISAs.
+    - **Advanced**: Blocked GEMM and Loaded-latency benchmarks.
 
 ---
 
@@ -386,49 +413,40 @@ Ballpark only; depends heavily on kernel, ISA, and measurement method.
 
 ---
 
-## Project Structure
+## 📂 Project Architecture
 
-```
-src/
-  main.cpp           - CLI dispatch (kernel routing)
-  compute_bench.cpp  - FMA/Flops/Dot/SAXPY (multi-threaded, 4-accumulator unrolling)
-  stream_sweep.cpp   - STREAM bandwidth sweep (NUMA-aware parallel init)
-  latency_bench.cpp  - Pointer-chasing latency sweep (serial by design)
-  sys_info.cpp       - System info collection
+### Root Files
+*   **`CMakeLists.txt`**: Build configuration (C++17, `-O3`, `-march=native`, OpenMP).
+*   **`CMakePresets.json`**: Convenient build presets for Release/Debug to ensure consistent builds.
+*   **`README.md` / `REPORT.md`**: Documentation and technical reports/analysis.
 
-include/
-  aligned_buffer.hpp - RAII 64-byte aligned allocator (power-of-2 validated)
-  stream_kernels.hpp - STREAM kernels with RESTRICT macros + OpenMP SIMD
-  config.hpp         - CLI argument parsing
-  timer.hpp          - High-resolution timer
-  utils.hpp          - Checksum, statistics, compiler barriers
-  results.hpp        - BenchmarkResult structures + JSON serialization
-  size_parse.hpp     - Human-readable size string parser ("64MB", "256MiB")
-  sys_info.hpp       - System info structures
-  nlohmann/json.hpp  - Embedded JSON library
+### `include/` (Infrastructure)
+The architectural heart of the project containing the shared infrastructure:
+*   **`aligned_buffer.hpp`**: RAII wrapper for cache-line aligned allocation (64B) using `posix_memalign` (Linux) or `_aligned_malloc` (Windows). Crucial for preventing "straddling" (data crossing cache lines) and ensuring stable measurements.
+*   **`timer.hpp`**: High-resolution timer with measurement hygiene (excluding overheads).
+*   **`utils.hpp`**: Helper functions including `do_not_optimize_away()` and `clobber_memory()` to prevent the compiler from "optimizing out" work or reordering instructions across measurement boundaries.
+*   **`stream_kernels.hpp`**: Implementation of STREAM kernels (Copy/Scale/Add/Triad) using `RESTRICT` macros to assist vectorization.
+*   **`sys_info.hpp`**: Captures system context (CPU model, frequency, logical cores) for reproducible results.
+*   **`size_parse.hpp`**: Human-readable size parsing (e.g., "64KB", "1MB").
+*   **`results.hpp`**: Data structures for statistics (median, P95, min/max) and JSON serialization.
 
-scripts/
-  run_suite.py                - End-to-end automation pipeline
-  aggregate_runs.py           - Multi-run aggregation
-  plot_bandwidth_vs_size.py   - Bandwidth waterfall plots (clean/research modes)
-  plot_latency_vs_size.py     - Latency vs size plots
-  plot_results.py             - Minimal pandas + matplotlib plot
-  run_perf_stat.py            - Linux perf stat wrapper
-  run_valgrind_cachegrind.py  - Valgrind/Cachegrind wrapper
-  run_llvm_mca.py             - LLVM-MCA pipeline analysis wrapper
-  run_opt_experiment.py       - Compiler flag optimization experiment
-  run_bench_runs.ps1          - PowerShell multi-run script
+### `src/` (Implementation)
+*   **`main.cpp`**: Entry point. Dispatches kernels based on CLI arguments.
+*   **`stream_sweep.cpp`**: **Bandwidth Mode**. Runs STREAM kernels across a sweep of sizes (L1 to DRAM). Handles NUMA-aware initialization and pre-faulting.
+*   **`compute_bench.cpp`**: **Compute Mode**. Kernels like FMA, FLOPS, Dot, SAXPY.
+    *   *Feature*: The FMA kernel uses **4-way unrolling** to expose distinct dependency chains, ensuring we measure **throughput** (filling the pipeline) rather than latency (waiting for a single accumulator).
+*   **`latency_bench.cpp`**: **Latency Mode**. Pointer chasing on a randomized linked list (64B padded nodes) to defeat hardware prefetchers and measure pure load latency.
 
-results/
-  raw/       - Per-run JSON + stdout/stderr captures
-  summary/   - Aggregated JSON + CSV
-  system/    - system.json CPU info snapshot
-  perf/      - perf stat outputs (or BLOCKED.txt on Windows)
-  valgrind/  - Cachegrind outputs (or BLOCKED.txt on Windows)
-  llvm-mca/  - LLVM-MCA reports (or BLOCKED.txt on Windows)
+### `scripts/` (Automation)
+*   **`run_suite.py`**: The "Master" script. Runs combinations of sizes, kernels, and iterations to generate a full dataset.
+*   **`aggregate_runs.py`**: Aggregates raw JSON runs into summaries (median, per-size stats).
+*   **`plot_*.py`**: Generates bandwidth/latency waterfall plots from summary data.
+*   **`run_perf_stat.py` / `valgrind` / `llvm-mca`**: Wrappers for deep analysis tools.
 
-plots/       - Generated PNG + CSV visualizations
-```
+### `results/` (Artifacts)
+*   **`raw/`**: Individual run JSONs + stdout/stderr logs.
+*   **`summary/`**: Aggregated statistics.
+*   **`perf/`, `valgrind/`, `llvm-mca/`**: Output from external analysis tools.
 
 ## Report
 See `REPORT.md` for a minimal, reproducible run recipe and the artifact contract (where outputs live and what they mean).
