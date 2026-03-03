@@ -5,6 +5,22 @@ import os
 import subprocess
 from pathlib import Path
 
+# -------------------------------------------------------------------------------
+# WHY I WROTE THIS SCRIPT (The Visualizer):
+# A table of 100 numbers is hard to read. A graph tells the performance story instantly.
+# In HPC, the shape of the curve (The Waterfall) is the hardware's "fingerprint."
+#
+# WHAT IT DOES:
+# 1. Identifies the Waterfall: Visually shows the performance drops (L1 -> L2 -> RAM).
+# 2. Intuitive Comparison: Allows comparing Single-Thread vs Multi-Thread on one plot.
+# 3. Professional Quality: Generates publication-ready charts using matplotlib.
+#
+# HOW IT WORKS:
+# - Reads aggregated summary JSONs.
+# - Plots Size (X-axis, Log Scale) vs Bandwidth/Latency (Y-axis).
+# - Adds automatic annotations where "knees" (performance drops) occur.
+# -------------------------------------------------------------------------------
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.lines import Line2D

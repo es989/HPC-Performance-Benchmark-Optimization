@@ -1,5 +1,21 @@
 """Run Valgrind Cachegrind on a benchmark command (Linux-only) and save outputs.
 
+-------------------------------------------------------------------------------
+WHY I WROTE THIS SCRIPT (The Deep Analyzer):
+Sometimes performance drops, but we don't know WHY. Is it instruction count?
+Or is it Cache Misses? This tool proves the theory with math.
+
+WHAT IT DOES:
+1. Root Cause Analysis: Counts exactly how many L1/L3 Cache Misses occurred.
+2. Verified Theory: If a kernel is "memory bound," this tool will show a high
+   miss rate, proving the bottleneck is memory and not CPU.
+
+HOW IT WORKS:
+- Wraps `valgrind --tool=cachegrind`.
+- Runs the binary in a "Virtual Machine" that simulates a CPU Cache.
+- Parses the complex output into a readable report (Miss Rate %).
+-------------------------------------------------------------------------------
+
 Outputs under results/valgrind/:
 - cachegrind_<stamp>.out
 - cachegrind_<stamp>.txt (human summary via cg_annotate if available)

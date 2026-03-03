@@ -1,5 +1,23 @@
 """Aggregate multiple benchmark JSON runs into a single JSON + CSV summary.
 
+-------------------------------------------------------------------------------
+WHY I WROTE THIS SCRIPT (The Analyst):
+Performance measurements are "noisy." Background tasks (updates, garbage collection)
+can ruin a single run. Looking at just one result is often misleading.
+
+WHAT IT DOES:
+1. Stability: Takes multiple runs (e.g., 5 repeats) and filters out noise.
+2. Statistical Significance: Computes the Median (instead of Average) to ignore
+   extreme outliers, and Standard Deviation to measure stability.
+3. Summary: Produces a single clean CSV/JSON line (e.g., "At 64MB, Bandwidth is 45GB/s").
+
+HOW IT WORKS:
+- Scans `results/raw/` for JSON files.
+- Groups them by configuration (Same Kernel + Same Size).
+- Extracts the `bandwidth_gb_s` metric.
+- Calculates stats and saves `summary/aggregated_results.json`.
+-------------------------------------------------------------------------------
+
 This complements the executable's internal statistics (median/p95 across iters)
 by computing robust statistics across repeated *process-level* runs.
 

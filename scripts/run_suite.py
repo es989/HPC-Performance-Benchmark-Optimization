@@ -1,5 +1,22 @@
 """End-to-end local benchmarking pipeline: build -> run -> aggregate -> plot.
 
+-------------------------------------------------------------------------------
+WHY I WROTE THIS SCRIPT (The Orchestrator):
+In a real benchmark, running a single command isn't enough. You need to test
+various combinations (sizes, kernels, thread counts) to get the full picture.
+Doing this manually is slow and error-prone.
+
+WHAT IT DOES:
+1. Full Automation: Runs a pre-defined sweep of experiments (L1 -> DRAM).
+2. Configuration Management: Controls build types (Release) and thread counts.
+3. Organized Collection: Captures all outputs (JSON/Logs) into `results/raw/`.
+
+HOW IT WORKS:
+- Uses Python's `subprocess` to launch the C++ binary (`bench.exe`).
+- Iterates through experiment parameters (e.g., Kernel=Triad, Size=32MB).
+- Validates that each run finished successfully before moving only.
+-------------------------------------------------------------------------------
+
 Goals:
 - Minimal, reliable workflow suitable for portfolio/resume claims.
 - Repeated runs (process-level) with aggregation (median-of-medians).

@@ -1,5 +1,21 @@
 """Run `perf stat` around the benchmark command (Linux-only) and save outputs.
 
+-------------------------------------------------------------------------------
+WHY I WROTE THIS SCRIPT (The Hardware Statistician):
+Simulation (Valgrind) is slow. `perf` gives us access to Real-Time Hardware Counters
+embedded in the CPU silicon.
+
+WHAT IT DOES:
+1. Empirical Data: Measures exact CPU Cycles and Instructions per Cycle (IPC).
+2. Efficiency Check: Tells us if the CPU is busy computing (High IPC) or
+   stalled waiting for memory (Low IPC).
+
+HOW IT WORKS:
+- Runs the command under `perf stat` (Linux).
+- Collects critical metrics: `cycles`, `instructions`, `cache-misses`.
+- On Windows (where perf is absent), it logs a "BLOCKED" note safely.
+-------------------------------------------------------------------------------
+
 Minimum counters:
 - cycles
 - instructions

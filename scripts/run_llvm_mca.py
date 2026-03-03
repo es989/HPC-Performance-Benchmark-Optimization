@@ -1,5 +1,21 @@
 """Run LLVM-MCA on a tiny extracted compute kernel (Linux-only).
 
+-------------------------------------------------------------------------------
+WHY I WROTE THIS SCRIPT (The Optimizer):
+Sometimes code looks perfect, but runs slow. This is often due to "Pipeline Stalls"
+or pressure on specific execution ports (e.g., waiting for the only FMA unit).
+
+WHAT IT DOES:
+1. Theoretical Forecast: Analyzes the Assembly code statically (without running it).
+2. Pipeline Bottleneck Detection: Shows if the CPU is stuck waiting for data dependencies
+   (like the single accumulator issue we fixed).
+
+HOW IT WORKS:
+- Extracts the kernel assembly (`.s` file).
+- Feeds it into `llvm-mca` (Machine Code Analyzer).
+- Generates a report on Throughput and Resource Pressure.
+-------------------------------------------------------------------------------
+
 LLVM-MCA analyzes throughput/latency of an instruction stream. This script:
 - generates a small C++ file with a tight loop (dot-like)
 - compiles it to assembly with clang
