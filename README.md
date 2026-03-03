@@ -2,7 +2,7 @@
 
 A C++17 **multi-threaded** microbenchmark suite for measuring **memory bandwidth**, **memory latency**, and **compute throughput** across the full memory hierarchy (L1/L2/LLC/DRAM).
 
-## 🚀 Project Overview
+##  Project Overview
 
 This project is designed to measure and illustrate the theoretical hardware limits of a machine (or server) in three key areas:
 

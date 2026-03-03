@@ -60,7 +60,7 @@ def main() -> int:
     (out_dir / f"cachegrind_{s}.stdout.txt").write_text(completed.stdout or "", encoding="utf-8")
     (out_dir / f"cachegrind_{s}.stderr.txt").write_text(completed.stderr or "", encoding="utf-8")
 
-    # Human annotation (best-effort)
+    # Generate readable report via cg_annotate (if available)
     if shutil.which("cg_annotate") is not None:
         ann = subprocess.run(["cg_annotate", str(out_file)], cwd=str(ROOT), text=True, capture_output=True)
         (out_dir / f"cachegrind_{s}.txt").write_text((ann.stdout or "") + "\n" + (ann.stderr or ""), encoding="utf-8")
