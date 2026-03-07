@@ -24,13 +24,13 @@ This project is designed to measure and illustrate the theoretical hardware limi
 
 ### Memory Bandwidth
 
-This graph reveals the distinct plateaus of the memory hierarchy (L1, L2, LLC, DRAM). As the data set size increases beyond the capacity of each cache level, the bandwidth drops sharply, exposing the raw throughput limits of the underlying hardware.
+This graph illustrates the performance behavior of the memory subsystem across different hierarchy levels (L1, L2, LLC, DRAM). As the working set size likely exceeds the capacity of each cache level, the observed bandwidth drops, a trend consistent with the hardware's throughput constraints.
 
 ![Memory Bandwidth vs Size](assets/bandwidth_vs_size_triad.svg)
 
 ### Memory Latency
 
-By using a pointer-chasing benchmark (`--kernel latency`) with a randomized traversal pattern, we defeat hardware prefetchers to measure the true latency of memory accesses. The stair-step pattern clearly visualizes the access time penalty for each level of the cache hierarchy.
+By employing a pointer-chasing benchmark (`--kernel latency`) with a randomized traversal pattern, this test aims to defeat hardware prefetchers and measure dependent memory access latency. The resulting stair-step pattern is consistent with the access latency penalties expected at each level of the cache hierarchy.
 
 ![Memory Latency vs Size](assets/latency_vs_size_ptr_chase.png)
 
