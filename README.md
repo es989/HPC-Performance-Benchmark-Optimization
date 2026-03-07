@@ -2,6 +2,10 @@
 
 A C++17 **multi-threaded** microbenchmark suite for measuring **memory bandwidth**, **memory latency**, and **compute throughput** across the full memory hierarchy (L1/L2/LLC/DRAM).
 
+*   **Architecture-Aware:** Explicit NUMA first-touch initialization and thread pinning.
+*   **Hardware Limit Testing:** AVX/AVX-512 vectorization with 4-way FMA unrolling for peak throughput.
+*   **Measurement Purity:** Anti-Dead-Code-Elimination (DCE) checksums and hardware prefetcher defeat mechanisms.
+
 ##  Project Overview
 
 This project is designed to measure and illustrate the theoretical hardware limits of a machine (or server) in three key areas:
@@ -15,6 +19,62 @@ This project is designed to measure and illustrate the theoretical hardware limi
 *   **JSON Output**: Generates structured, parsable logs for easy analysis.
 *   **Automation Suite**: Scripts for running experiment suites, result collection, and integration with analysis tools like `perf`, `valgrind`, and `llvm-mca`.
 *   **Organized Results**: Dedicated folders for `raw`, `summary`, `perf`, `valgrind`, and `llvm-mca` outputs.
+
+## Sample Output
+
+### Memory Bandwidth
+
+This graph reveals the distinct plateaus of the memory hierarchy (L1, L2, LLC, DRAM). As the data set size increases beyond the capacity of each cache level, the bandwidth drops sharply, exposing the raw throughput limits of the underlying hardware.
+
+![Memory Bandwidth vs Size](assets/bandwidth_vs_size_triad.svg)
+
+### Memory Latency
+
+By using a pointer-chasing benchmark (`--kernel latency`) with a randomized traversal pattern, we defeat hardware prefetchers to measure the true latency of memory accesses. The stair-step pattern clearly visualizes the access time penalty for each level of the cache hierarchy.
+
+![Memory Latency vs Size](assets/latency_vs_size_ptr_chase.png)
+
+## Methodology (The Performance Contract)
+
+Microbenchmarks are sensitive to system noise. This project makes results comparable and accurate by:
+
+* **NUMA First-Touch**: arrays initialized in `#pragma omp parallel for schedule(static)` blocks that match the kernel's thread layout, ensuring physical pages are local to the processing cores.
+* **Parallel Prefault** (`--prefault`): page pre-commitment runs in parallel to preserve NUMA binding.
+* **Warmup**: primes caches and stabilizes DVFS (CPU frequency scaling) before measurement.
+* **Compiler Barriers**: `clobber_memory()` is placed before and after each kernel invocation to prevent instruction hoisting across `Timer` boundaries.
+* **Anti-DCE checksums**: sampled array checksums are passed to `do_not_optimize_away()` after every iteration to block the compiler from eliding the kernel.
+* **Statistical rigor**: reports Median (typical), P95 (tail), Stddev (variance/stability), Min/Max (outlier detection).
+
+### How to get stable measurements
+
+| Platform | Recommended command |
+| :--- | :--- |
+| Linux | `taskset -c 0-7 OMP_NUM_THREADS=8 ./bench --kernel triad --warmup 50 --iters 200 --prefault` |
+| Windows | `set OMP_NUM_THREADS=8 && bench.exe --kernel triad --warmup 50 --iters 200 --prefault` |
+
+**Stability checklist:**
+- Set `OMP_NUM_THREADS` to your physical core count (avoid hyperthreads for bandwidth tests).
+- Use `--warmup 50` or higher to stabilize frequency (DVFS) and cache state.
+- Use `--iters 200` or higher for statistically stable median/P95.
+- Use `--prefault` to move page-fault latency outside the timed region.
+- Run 3–5 trials and report median-of-medians per size for reproducible comparisons.
+
+## Architecture Overview
+
+### OpenMP Parallelism
+Every kernel except `latency` is fully multi-threaded via OpenMP 4.0+. All loops use `schedule(static)` for deterministic, balanced chunk assignment matching the NUMA initialization layout.
+
+### NUMA-Aware First-Touch Initialization
+All benchmark arrays are initialized inside `#pragma omp parallel for schedule(static)` blocks **before** measurement begins. This triggers the OS first-touch policy, assigning physical memory pages to the NUMA node and CPU socket that will later process them. Applied in both `stream_sweep.cpp` and `compute_bench.cpp`. The optional `--prefault` pass is also parallelized to preserve NUMA binding.
+
+### SIMD Vectorization
+`RESTRICT`-qualified pointer macros (`__restrict__` GCC/Clang, `__restrict` MSVC) are applied to all kernel arguments in `stream_kernels.hpp`. This guarantees the compiler generates packed AVX/AVX2/AVX-512 instructions without aliasing-check prologues. `#pragma omp simd` is avoided to maintain compatibility with MSVC's OpenMP 2.0 implementation.
+
+### FMA Throughput Optimization
+`compute_fma_kernel` and `compute_flops_kernel` use a 4-accumulator unrolled inner loop, replacing the previous single-scalar serial chain. This is required to measure FMA **throughput** (not latency). A single-scalar chain stalls every 4–5 cycles; 4 independent chains can issue 1 FMA per cycle per port.
+
+### Aligned Memory (`include/aligned_buffer.hpp`)
+`benchmark::AlignedBuffer<T>` is a move-only RAII allocator providing exact 64-byte aligned storage. The constructor validates that the requested alignment is a power of 2 before dispatching to `posix_memalign` (POSIX) or `_aligned_malloc` (Windows).
 
 ---
 
@@ -188,24 +248,7 @@ Both kernels use `#pragma omp parallel for schedule(static)` with a **4-accumula
 
 Randomized pointer-chasing sweep from 4KB to 256MB using `alignas(64)` padded nodes and a `std::mt19937`-shuffled access pattern that defeats all hardware prefetchers. Inherently serial by design — measures true dependent-load latency per cache tier.
 
----
 
-## Architecture Overview
-
-### OpenMP Parallelism
-Every kernel except `latency` is fully multi-threaded via OpenMP 4.0+. All loops use `schedule(static)` for deterministic, balanced chunk assignment matching the NUMA initialization layout.
-
-### NUMA-Aware First-Touch Initialization
-All benchmark arrays are initialized inside `#pragma omp parallel for schedule(static)` blocks **before** measurement begins. This triggers the OS first-touch policy, assigning physical memory pages to the NUMA node and CPU socket that will later process them. Applied in both `stream_sweep.cpp` and `compute_bench.cpp`. The optional `--prefault` pass is also parallelized to preserve NUMA binding.
-
-### SIMD Vectorization
-`RESTRICT`-qualified pointer macros (`__restrict__` GCC/Clang, `__restrict` MSVC) are applied to all kernel arguments in `stream_kernels.hpp`. This guarantees the compiler generates packed AVX/AVX2/AVX-512 instructions without aliasing-check prologues. `#pragma omp simd` is avoided to maintain compatibility with MSVC's OpenMP 2.0 implementation.
-
-### FMA Throughput Optimization
-`compute_fma_kernel` and `compute_flops_kernel` use a 4-accumulator unrolled inner loop, replacing the previous single-scalar serial chain. This is required to measure FMA **throughput** (not latency). A single-scalar chain stalls every 4–5 cycles; 4 independent chains can issue 1 FMA per cycle per port.
-
-### Aligned Memory (`include/aligned_buffer.hpp`)
-`benchmark::AlignedBuffer<T>` is a move-only RAII allocator providing exact 64-byte aligned storage. The constructor validates that the requested alignment is a power of 2 before dispatching to `posix_memalign` (POSIX) or `_aligned_malloc` (Windows).
 
 ---
 
@@ -276,31 +319,7 @@ Each sweep point includes:
 * **Stddev + CV** (`stddev/median`): measurement stability
 * **Min/Max**: best/worst observed iteration times
 
----
 
-## Methodology (The Performance Contract)
-Microbenchmarks are sensitive to system noise. This project makes results comparable and accurate by:
-
-* **NUMA First-Touch**: arrays initialized in `#pragma omp parallel for schedule(static)` blocks that match the kernel's thread layout, ensuring physical pages are local to the processing cores.
-* **Parallel Prefault** (`--prefault`): page pre-commitment runs in parallel to preserve NUMA binding.
-* **Warmup**: primes caches and stabilizes DVFS (CPU frequency scaling) before measurement.
-* **Compiler Barriers**: `clobber_memory()` is placed before and after each kernel invocation to prevent instruction hoisting across `Timer` boundaries.
-* **Anti-DCE checksums**: sampled array checksums are passed to `do_not_optimize_away()` after every iteration to block the compiler from eliding the kernel.
-* **Statistical rigor**: reports Median (typical), P95 (tail), Stddev (variance/stability), Min/Max (outlier detection).
-
-### How to get stable measurements
-
-| Platform | Recommended command |
-| :--- | :--- |
-| Linux | `taskset -c 0-7 OMP_NUM_THREADS=8 ./bench --kernel triad --warmup 50 --iters 200 --prefault` |
-| Windows | `set OMP_NUM_THREADS=8 && bench.exe --kernel triad --warmup 50 --iters 200 --prefault` |
-
-**Stability checklist:**
-- Set `OMP_NUM_THREADS` to your physical core count (avoid hyperthreads for bandwidth tests).
-- Use `--warmup 50` or higher to stabilize frequency (DVFS) and cache state.
-- Use `--iters 200` or higher for statistically stable median/P95.
-- Use `--prefault` to move page-fault latency outside the timed region.
-- Run 3–5 trials and report median-of-medians per size for reproducible comparisons.
 
 <!-- BENCH_STABILITY_START -->
 ## Stable runs (Windows / low jitter)
