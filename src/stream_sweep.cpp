@@ -3,6 +3,7 @@
 #include "timer.hpp"
 #include "utils.hpp"
 #include "stream_kernels.hpp"
+#include "aligned_buffer.hpp"
 
 #include <vector>
 #include <cstddef>
@@ -70,10 +71,10 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         const std::size_t n = bytes_to_elems(size_bytes);
         if (n == 0) continue;
 
-        // Inputs/outputs (constant init => deterministic)
-        std::vector<double> A(n);
-        std::vector<double> B(n);
-        std::vector<double> C(n);
+        // Inputs/outputs (aligned to 64 bytes for AVX-512/Cache lines)
+        benchmark::AlignedBuffer<double> A(n, 64);
+        benchmark::AlignedBuffer<double> B(n, 64);
+        benchmark::AlignedBuffer<double> C(n, 64);
         const double s = 3.0;
 
         // First-touch NUMA parallel initialization
@@ -106,7 +107,6 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         //saves time for each iteration
         std::vector<long long> samples;
         samples.reserve(conf.iters);
-        //measure loop
         for (int it = 0; it < conf.iters; ++it) {
             Timer t;
 
@@ -120,16 +120,16 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
             const long long ns = t.elapsed_ns();
             samples.push_back(ns);
 
-            // Per-iteration small sink (minimal overhead thats why we enter only one index to minimise )
-            //(it) % n in order to stay in array boundries in different sizes
+            // Per-iteration small sink (minimal overhead)
+            // (it) % n ensures access stays within array boundaries
             do_not_optimize_away(A[static_cast<std::size_t>(it) % n]);
         }
 
         // ---- Validation (outside timed region) ----
         // Use sampled checksum for huge sizes (cheap, still meaningful).
-        //1024 is a small enough number that the CPU can process it almost instantly (it fits entirely within the L1 Cache)
-        //he odds of all 1024 sampled points being correct by "luck" are nearly zero
-        const std::size_t stride = std::max<std::size_t>(1, n / 1024); // ~1024 samples 
+        // 1024 samples fit entirely within L1 Cache (instant processing).
+        // The odds of all 1024 sampled points being correct by "luck" are nearly zero.
+        const std::size_t stride = std::max<std::size_t>(1, n / 1024); // ~1024 samples  
         const double sum_sample = Validator::checksum_sampled(A, stride);
         do_not_optimize_away(sum_sample);
 
@@ -154,16 +154,13 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         }
 
         // ---- Statistics ----
-        // Min/Max from sorted samples
         std::sort(samples.begin(), samples.end());
         const long long min_sample = samples.front();
         const long long max_sample = samples.back();
 
-        // Percentiles and standard deviation
         const double med = percentile_ns(samples, 50.0);
         const double p95 = percentile_ns(samples, 95.0);
 
-        // Convert samples to double for stddev calculation
         std::vector<double> samples_double;
         samples_double.reserve(samples.size());
         for (auto ns : samples) {
@@ -178,10 +175,8 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         // Effective bandwidth computed from MEDIAN iteration time (stable) for scaling and numeric error 
         const double bw_gb_s = (bytes_per_iter / 1e9) / (med / 1e9);
 
-        // Store point
         BenchmarkResult::Point pt;
         pt.kernel = kd.name();
-        pt.bytes = size_bytes;
         pt.median_ns = med;
         pt.p95_ns = p95;
         pt.min_ns = static_cast<double>(min_sample);

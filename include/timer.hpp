@@ -11,10 +11,8 @@
  * by system clock adjustments (wall clock changes).
  */
 class Timer {
-    // Alias for the monotonic clock 
     using clock = std::chrono::steady_clock;
 
-    // Stores the time point when start() was called
     clock::time_point start_point{};
 
 public:

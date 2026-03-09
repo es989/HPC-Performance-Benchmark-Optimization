@@ -3,16 +3,14 @@
 #include <iostream>
 #include <string>
 
-// חובה לכלול את זה כדי להכיר את StreamOp
+// Required for StreamOp definition
 #include "stream_kernels.hpp"
 
-// הצהרה על הפונקציה שנמצאת ב-stream_sweep.cpp
+// Forward declaration for the sweep runner in stream_sweep.cpp
 void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op);
 
-// Compute microbenchmark runner (src/compute_bench.cpp)
 void run_compute_bench(const Config& conf, BenchmarkResult& res, const std::string& kind);
 
-// Latency pointer-chasing runner (src/latency_bench.cpp)
 void run_latency_bench(const Config& conf, BenchmarkResult& res);
 
 int main(int argc, char** argv) {
@@ -21,7 +19,7 @@ int main(int argc, char** argv) {
 
     std::cout << "--- Starting Benchmark: " << conf.kernel << " ---\n";
 
-    // תמיכה גם בשמות קצרים וגם בארוכים
+    // Support both short and full names
     if (conf.kernel == "stream") {
         // Default STREAM representative kernel
         run_stream_sweep(conf, res, StreamOp::Triad);

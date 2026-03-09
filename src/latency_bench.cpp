@@ -79,7 +79,7 @@ static void build_random_cycle(Node* nodes, std::size_t n, std::uint32_t seed) {
     std::vector<std::uint32_t> idx(n);
     for (std::uint32_t i = 0; i < static_cast<std::uint32_t>(n); ++i) idx[i] = i;
 
-    // Shuffle the indices to create a random access pattern.
+    // Shuffle indices to create a random access pattern (defeats hardware prefetchers).
     std::mt19937 rng(seed);
     std::shuffle(idx.begin(), idx.end(), rng);
 

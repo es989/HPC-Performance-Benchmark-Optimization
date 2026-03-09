@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <atomic> // for std::atomic_signal_fence
 
 /**
  * @brief Prevent the compiler from optimizing away a value.
@@ -47,9 +48,11 @@ inline void clobber_memory() {
     // Acts as a full compiler memory barrier.
     asm volatile("" : : : "memory");
 #else
-    // MSVC: no perfect standard equivalent; this is left empty intentionally.
-    // If needed, keep timing code in separate translation units and avoid inlining,
-    // or use _ReadWriteBarrier() from <intrin.h>.
+    // C++11 standard provides a portable compiler barrier.
+    // std::atomic_signal_fence(std::memory_order_acq_rel) prevents the compiler
+    // from reordering memory operations across this point, but does NOT emit
+    // a hardware fence instruction (like mfence), so it's lightweight.
+    std::atomic_signal_fence(std::memory_order_acq_rel);
 #endif
 }
 
