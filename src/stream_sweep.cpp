@@ -72,9 +72,17 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         if (n == 0) continue;
 
         // Inputs/outputs (aligned to 64 bytes for AVX-512/Cache lines)
-        benchmark::AlignedBuffer<double> A(n, 64);
-        benchmark::AlignedBuffer<double> B(n, 64);
-        benchmark::AlignedBuffer<double> C(n, 64);
+        benchmark::AlignedBuffer<double> A, B, C;
+        try {
+            A = benchmark::AlignedBuffer<double>(n, 64);
+            B = benchmark::AlignedBuffer<double>(n, 64);
+            C = benchmark::AlignedBuffer<double>(n, 64);
+        } catch (const std::bad_alloc&) {
+            std::cerr << "[ERROR] Out of Memory allocating "
+                      << (3 * size_bytes) / (1024 * 1024)
+                      << " MB. Skipping size.\n";
+            continue;
+        }
         const double s = 3.0;
 
         // First-touch NUMA parallel initialization
@@ -130,12 +138,12 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         // 1024 samples fit entirely within L1 Cache (instant processing).
         // The odds of all 1024 sampled points being correct by "luck" are nearly zero.
         const std::size_t stride = std::max<std::size_t>(1, n / 1024); // ~1024 samples  
-        const double sum_sample = Validator::checksum_sampled(A, stride);
+        const double sum_sample = Validator::checksum_sampled(A.data(), n, stride);
         do_not_optimize_away(sum_sample);
 
         // Optional full correctness check for small sizes (keep overhead low)
         if (size_bytes <= 8 * 1024 * 1024) {
-            const double full = Validator::checksum_full(A);
+            const double full = Validator::checksum_full(A.data(), n);
 
             // expected value per element for each op given B=2.0, C=3.0, s=3.0
             double expected_val = 0.0;
@@ -176,6 +184,7 @@ void run_stream_sweep(const Config& conf, BenchmarkResult& res, StreamOp op) {
         const double bw_gb_s = (bytes_per_iter / 1e9) / (med / 1e9);
 
         BenchmarkResult::Point pt;
+        pt.bytes = size_bytes;
         pt.kernel = kd.name();
         pt.median_ns = med;
         pt.p95_ns = p95;

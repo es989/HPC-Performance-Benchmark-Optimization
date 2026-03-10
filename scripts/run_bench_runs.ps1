@@ -69,7 +69,7 @@ for ($i = 1; $i -le $Runs; $i++) {
     try {
         # Attempt to pin the process to the given CPU mask and raise its priority
         # to reduce scheduling noise during the measured run. This is best-effort
-        # — failures are nonfatal (e.g., when running without sufficient privileges).
+        # - failures are nonfatal (e.g., when running without sufficient privileges).
         $p.ProcessorAffinity = $AffinityMask
         $p.PriorityClass = $Priority
     } catch {

@@ -118,6 +118,12 @@ struct Validator {
         return sum;
     }
 
+    static double checksum_full(const double* data, std::size_t n) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i < n; ++i) sum += data[i];
+        return sum;
+    }
+
     /**
      * @brief Sampled checksum — cheaper than full sum for huge arrays.
      * @param stride sample every `stride` elements.
@@ -128,6 +134,17 @@ struct Validator {
 
         double sum = 0.0;
         for (std::size_t i = 0; i < data.size(); i += stride) {
+            sum += data[i];
+        }
+        return sum;
+    }
+
+    static double checksum_sampled(const double* data, std::size_t n, std::size_t stride) {
+        if (n == 0) return 0.0;
+        if (stride == 0) stride = 1;
+
+        double sum = 0.0;
+        for (std::size_t i = 0; i < n; i += stride) {
             sum += data[i];
         }
         return sum;
