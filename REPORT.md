@@ -540,3 +540,253 @@ Latency stability is **excellent** at all cache-resident sizes (<0.4% run-to-run
 > session, DRAM values are consistent. The full observed range across all campaigns is
 > ~18–21 GB/s for Triad at 512 MB.
 
+---
+
+## Appendix E — Scripts & Automation Reference
+
+All scripts live in `scripts/`. Python scripts require the project virtualenv (`pip install pandas>=2.0 matplotlib>=3.7`). PowerShell scripts are Windows-only.
+
+### Platform Summary
+
+| Script | Platform | Purpose |
+|---|---|---|
+| `run_suite.py` | Cross-platform | End-to-end pipeline: build → run → aggregate → plot |
+| `run_all.ps1` | Windows | Batch-run all kernels with hardcoded flags |
+| `run_bench_runs.ps1` | Windows | Repeated runs with CPU pinning, priority, and aggregation |
+| `aggregate_runs.py` | Cross-platform | Merge multiple JSON runs into summary JSON + CSV |
+| `check_schema.py` | Cross-platform | Validate aggregated summary JSON schema |
+| `plot_bandwidth_vs_size.py` | Cross-platform | Bandwidth waterfall chart with knee detection |
+| `plot_latency_vs_size.py` | Cross-platform | Latency vs working-set size chart |
+| `plot_results.py` | Cross-platform | Simple single-plot bandwidth chart |
+| `run_opt_experiment.py` | Cross-platform | Compare compiler optimization flags on a kernel |
+| `run_perf_stat.py` | Linux | Wrap benchmark in `perf stat` for HW counters |
+| `run_llvm_mca.py` | Linux | Static pipeline analysis via LLVM-MCA |
+| `run_valgrind_cachegrind.py` | Linux | Cache simulation via Valgrind Cachegrind |
+
+---
+
+### E.1 — Orchestration & Execution Scripts
+
+#### `run_suite.py` — End-to-End Pipeline
+
+Builds the project, runs repeated benchmark sweeps (triad + latency + dot), aggregates results, and generates plots — all in a single invocation.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--build-dir` | `Path` | `build` | CMake build directory |
+| `--config` | `str` | `Release` | CMake config (Windows multi-config) |
+| `--skip-build` | flag | off | Skip CMake build step |
+| `--repeats` | `int` | `3` | Number of repeated process-level runs |
+| `--iters` | `int` | `50` | Measured iterations per sweep point |
+| `--warmup` | `int` | `10` | Warmup iterations |
+| `--prefault` | flag | off | Enable `--prefault` (pre-fault pages before timing) |
+| `--aligned` | flag | off | Enable `--aligned` (64-byte-aligned allocations) |
+| `--skip-plots` | flag | off | Skip plot generation |
+
+```powershell
+# Full pipeline with production flags
+python scripts/run_suite.py --prefault --aligned --iters 200 --warmup 50 --repeats 3
+
+# Skip rebuild, just re-run + plot
+python scripts/run_suite.py --skip-build --prefault --aligned --iters 200 --warmup 50
+```
+
+#### `run_all.ps1` — Batch Kernel Runner (Windows)
+
+Runs all benchmark kernels (`scale`, `add`, `triad`, `fma`, `flops`, `dot`, `saxpy`, `latency`) with hardcoded flags and saves per-kernel JSON to `results/raw/`. No parameters — all values are hardcoded:
+
+- `OMP_NUM_THREADS = 4`
+- Binary: `.\build\Release\bench.exe`
+- Flags: `--warmup 50 --iters 200 --prefault --aligned` (latency omits `--aligned`)
+
+```powershell
+.\scripts\run_all.ps1
+```
+
+#### `run_bench_runs.ps1` — Repeated Runs with Pinning (Windows)
+
+Repeatedly runs the benchmark with CPU affinity pinning and elevated priority, then aggregates per-bytes statistics into a CSV summary.
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `-Runs` | `int` | `5` | Number of repeated benchmark invocations |
+| `-BenchPath` | `string` | `..\build\Release\bench.exe` | Path to `bench` executable |
+| `-BenchArgs` | `string` | `"--kernel copy --warmup 50 --iters 200"` | Arguments passed verbatim to bench |
+| `-AffinityMask` | `int` | `1` | Processor affinity mask (integer) |
+| `-Priority` | `string` | `High` | Process priority class (`Normal`, `High`, `RealTime`, `Idle`, `BelowNormal`, `AboveNormal`) |
+| `-OutDir` | `string` | `..\build\Release\runs` | Directory for per-run JSON and aggregated CSV |
+| `-SleepBetween` | `int` | `2` | Seconds to sleep between runs for thermal settling |
+
+```powershell
+# 3 pinned triad runs on physical cores only, high priority
+.\scripts\run_bench_runs.ps1 -Runs 3 `
+    -BenchArgs "--kernel triad --warmup 50 --iters 200 --prefault --aligned --size 512MB" `
+    -AffinityMask 0x55 -Priority High -SleepBetween 5
+
+# 5 single-threaded FLOPS runs pinned to core 1
+.\scripts\run_bench_runs.ps1 -Runs 5 `
+    -BenchArgs "--kernel flops --warmup 50 --iters 200 --prefault --aligned --size 64MB" `
+    -AffinityMask 0x04 -Priority High
+```
+
+---
+
+### E.2 — Aggregation & Validation Scripts
+
+#### `aggregate_runs.py` — Merge Repeated Runs
+
+Takes multiple per-run JSON files and produces a single aggregated JSON and CSV with median-of-medians statistics, filtering out noise.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `inputs` | positional (`nargs="+"`) | *(required)* | Input JSON files |
+| `--out-json` | `Path` | *(required)* | Output aggregated JSON path |
+| `--out-csv` | `Path` | *(required)* | Output CSV path |
+
+```powershell
+python scripts/aggregate_runs.py results/raw/triad_run*.json `
+    --out-json results/summary/triad_agg.json `
+    --out-csv results/summary/triad_agg.csv
+```
+
+#### `check_schema.py` — JSON Schema Validator
+
+Validates the schema of the newest `*_agg_*.json` files under `results/summary/`. Checks top-level keys, required sweep fields, and that latency summaries include `ns_per_access`. No flags — run with no arguments.
+
+```powershell
+python scripts/check_schema.py
+```
+
+---
+
+### E.3 — Plotting Scripts
+
+All plotting scripts require `pandas>=2.0` and `matplotlib>=3.7`.
+
+#### `plot_bandwidth_vs_size.py` — Bandwidth Waterfall (Advanced)
+
+Publication-ready bandwidth-vs-working-set chart with automatic cache-boundary knee detection, drop annotations, and theoretical bandwidth overlays.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `json` | positional | *(required)* | Path to benchmark JSON file |
+| `--out-dir` | `str` | `plots` | Directory to write plots |
+| `--export-csv` | flag | off | Export `stats.sweep` to CSV |
+| `--export-drops-csv` | flag | off | Export detected knees/drops table to CSV |
+| `--mode` | `clean\|research` | `clean` | `clean`: conservative cache labels; `research`: drop #k labels with magnitude |
+| `--max-knees` | `int` | `5` | Maximum number of knees to annotate |
+| `--min-drop-ratio` | `float` | `0.75` | Require b2/b1 < this to count as a drop |
+| `--min-drop-peak-frac` | `float` | `0.10` | Require drop ≥ this fraction of peak BW |
+| `--min-drop-abs-gbs` | `float` | `2.0` | Require drop ≥ this absolute GB/s |
+| `--min-separation-factor` | `float` | `2.0` | Minimum knee separation factor on x (log scale) |
+| `--theory-match-tol` | `float` | `0.15` | "Near theory" threshold fraction |
+| `--min-pre-drop-peak-frac` | `float` | `0.30` | Ignore drops starting below this fraction of peak BW |
+| `--theory-l1` | flag | off | Draw theoretical L1 bandwidth line |
+| `--theory-text` | flag | off | Show text labels next to theory lines |
+
+```powershell
+# Clean mode (default) — publication-ready chart
+python scripts/plot_bandwidth_vs_size.py results/raw/triad.json
+
+# Research mode with CSV export
+python scripts/plot_bandwidth_vs_size.py results/raw/triad.json --mode research --export-csv --export-drops-csv
+
+# With theoretical bandwidth overlays
+python scripts/plot_bandwidth_vs_size.py results/raw/triad.json --theory-l1 --theory-text
+```
+
+#### `plot_latency_vs_size.py` — Latency Chart
+
+Plots pointer-chasing latency (ns/access) vs working-set size from aggregated JSON.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `json_path` | positional | *(required)* | Path to results JSON (`stats.sweep`) |
+| `--out` | `Path` | `plots/latency_vs_size_ptr_chase.png` | Output image path |
+| `--title` | `str` | *(auto)* | Plot title override |
+| `--show` | flag | off | Display the plot window |
+| `--dpi` | `int` | `200` | Output DPI |
+
+```powershell
+python scripts/plot_latency_vs_size.py results/raw/latency.json
+python scripts/plot_latency_vs_size.py results/raw/latency.json --show --title "Custom Title" --dpi 300
+```
+
+#### `plot_results.py` — Simple Bandwidth Chart
+
+Minimal single-plot bandwidth vs working-set size chart. Lighter than `plot_bandwidth_vs_size.py` — no knee detection or annotations.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `json_path` | positional | *(required)* | Path to results JSON (`stats.sweep`) |
+| `--out` | `Path` | `plots/bandwidth_vs_size_<kernel>.png` | Output image path |
+| `--no-effective-ws` | flag | off | Use raw `bytes` on X axis (skip STREAM array-multiplier) |
+| `--title` | `str` | *(auto)* | Plot title override |
+| `--show` | flag | off | Display the plot window |
+| `--dpi` | `int` | `200` | Output DPI |
+
+```powershell
+python scripts/plot_results.py results/raw/triad.json
+python scripts/plot_results.py results/raw/copy.json --no-effective-ws --show
+```
+
+---
+
+### E.4 — Profiling & Analysis Scripts
+
+These scripts run external profiling tools to gather hardware-level insights beyond what the benchmark itself measures.
+
+#### `run_perf_stat.py` — Hardware Performance Counters (Linux)
+
+Wraps a benchmark command in `perf stat`, collecting CPU cycles, instructions, IPC, cache-misses, and LLC-load-misses. Saves both raw `perf` output and parsed JSON.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--events` | `str` | `cycles,instructions,cache-misses,LLC-load-misses` | Comma-separated perf events |
+| `cmd` | remainder (after `--`) | *(required)* | Command to profile |
+
+```bash
+python scripts/run_perf_stat.py -- ./build/bench --kernel triad --iters 200 --warmup 50 --prefault --aligned
+python scripts/run_perf_stat.py --events cycles,instructions,cache-references,cache-misses -- ./build/bench --kernel dot --iters 100
+```
+
+#### `run_llvm_mca.py` — Static Pipeline Analysis (Linux)
+
+Generates a small C++ dot-product kernel, compiles to assembly with `clang++`, and feeds it to `llvm-mca` for static throughput/bottleneck analysis. No arguments — invoked directly.
+
+Requires: `clang++`, `llvm-mca`
+
+```bash
+python scripts/run_llvm_mca.py
+```
+
+#### `run_valgrind_cachegrind.py` — Cache Simulation (Linux)
+
+Wraps a benchmark command in `valgrind --tool=cachegrind` and optionally runs `cg_annotate` for human-readable cache-miss reports.
+
+Requires: `valgrind`
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `cmd` | remainder (after `--`) | *(required)* | Command to profile |
+
+```bash
+python scripts/run_valgrind_cachegrind.py -- ./build/bench --kernel triad --size 8MB --iters 50
+```
+
+#### `run_opt_experiment.py` — Compiler Flag Comparison
+
+Builds a compute kernel under multiple compiler optimization flag sets (e.g., `-O2`, `-O3`, `-O3 -march=native` on Linux; `/O2`, `/O2 /arch:AVX`, `/O2 /arch:AVX2` on Windows), runs each, and produces a comparison CSV and Markdown table.
+
+| Flag | Type | Default | Description |
+|---|---|---|---|
+| `--kernel` | `str` | `dot` | Compute kernel to run (`dot`, `saxpy`, `fma`, `flops`) |
+| `--size` | `str` | `64MB` | Problem size |
+| `--iters` | `int` | `50` | Measured iterations |
+| `--warmup` | `int` | `10` | Warmup iterations |
+
+```powershell
+python scripts/run_opt_experiment.py --kernel flops --size 64MB --iters 100 --warmup 20
+python scripts/run_opt_experiment.py --kernel dot --size 128MB
+```
+
