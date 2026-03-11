@@ -16,15 +16,13 @@ build_log*.txt
 *.pdb
 *.ilk
 
-# Generated benchmark outputs folder
-results/*
-!results/.gitkeep
-!results/raw/.gitkeep
-!results/summary/.gitkeep
-!results/system/.gitkeep
-!results/perf/.gitkeep
-!results/valgrind/.gitkeep
-!results/llvm-mca/.gitkeep
+# Raw benchmark result files (data is summarized in REPORT.md / CLEAN_RERUN_REPORT.md)
+audit_results/
+pinned_results/
+results/
+results_fresh/
+results.json
+repro-notes.md
 
 # Generated plots folder
 plots/*
