@@ -57,6 +57,7 @@ MANUAL_CACHE_CONFIG = {
     "cache_l1_bytes": 48 * 1024,        # 48 KiB
     "cache_l2_bytes": 5120 * 1024,      # 5 MiB
     "cache_llc_bytes": 12288 * 1024,    # 12 MiB
+    #backup if the script fails
 }
 
 

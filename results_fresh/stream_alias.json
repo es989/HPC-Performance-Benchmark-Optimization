@@ -1,0 +1,206 @@
+{
+    "config": {
+        "aligned": false,
+        "iters": 2,
+        "kernel": "stream",
+        "out": "results_fresh\\stream_alias.json",
+        "prefault": false,
+        "seed": 14,
+        "size": "64MB",
+        "threads": 1,
+        "warmup": 1
+    },
+    "metadata": {
+        "platform": {
+            "cache_l1_bytes": 49152,
+            "cache_l2_bytes": 1310720,
+            "cache_llc_bytes": 12582912,
+            "compiler": "MSVC 1929",
+            "compiler_full": "MSVC 1929",
+            "cpp_standard": 201703,
+            "cpu_model": "11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz",
+            "logical_cores": 8,
+            "os": "Windows",
+            "os_distro": "Windows",
+            "os_kernel": "Windows NT",
+            "ram_total_gib": 15,
+            "ram_total_pretty": "15 GiB"
+        },
+        "timestamp": "2026-03-10 19:56:40"
+    },
+    "stats": {
+        "performance": {
+            "avg_ns_per_op": 0.0,
+            "bandwidth_gb_s": 0.0,
+            "gflops": 0.0,
+            "total_time_ns": 0
+        },
+        "sweep": [
+            {
+                "bandwidth_gb_s": 72.81777777777778,
+                "bytes": 32768,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 1400.0,
+                "median_ns": 1350.0,
+                "min_ns": 1300.0,
+                "p95_ns": 1395.0,
+                "stddev_ns": 50.0
+            },
+            {
+                "bandwidth_gb_s": 95.90634146341463,
+                "bytes": 65536,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 2100.0,
+                "median_ns": 2050.0,
+                "min_ns": 2000.0,
+                "p95_ns": 2095.0,
+                "stddev_ns": 50.0
+            },
+            {
+                "bandwidth_gb_s": 107.73041095890412,
+                "bytes": 131072,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 3700.0,
+                "median_ns": 3650.0,
+                "min_ns": 3600.0,
+                "p95_ns": 3695.0,
+                "stddev_ns": 50.0
+            },
+            {
+                "bandwidth_gb_s": 101.47509677419355,
+                "bytes": 262144,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 7800.0,
+                "median_ns": 7750.0,
+                "min_ns": 7700.0,
+                "p95_ns": 7795.0,
+                "stddev_ns": 50.0
+            },
+            {
+                "bandwidth_gb_s": 78.8403007518797,
+                "bytes": 524288,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 26400.0,
+                "median_ns": 19950.0,
+                "min_ns": 13500.0,
+                "p95_ns": 25755.0,
+                "stddev_ns": 6450.0
+            },
+            {
+                "bandwidth_gb_s": 118.03857410881803,
+                "bytes": 1048576,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 27200.0,
+                "median_ns": 26650.0,
+                "min_ns": 26100.0,
+                "p95_ns": 27145.0,
+                "stddev_ns": 550.0
+            },
+            {
+                "bandwidth_gb_s": 61.11176299174357,
+                "bytes": 2097152,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 113100.0,
+                "median_ns": 102950.0,
+                "min_ns": 92800.0,
+                "p95_ns": 112085.00000000001,
+                "stddev_ns": 10150.0
+            },
+            {
+                "bandwidth_gb_s": 42.93776488653813,
+                "bytes": 4194304,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 338100.0,
+                "median_ns": 293050.0,
+                "min_ns": 248000.0,
+                "p95_ns": 333595.0,
+                "stddev_ns": 45050.0
+            },
+            {
+                "bandwidth_gb_s": 20.985510340226817,
+                "bytes": 8388608,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 1212000.0,
+                "median_ns": 1199200.0,
+                "min_ns": 1186400.0,
+                "p95_ns": 1210720.0,
+                "stddev_ns": 12800.0
+            },
+            {
+                "bandwidth_gb_s": 18.21169012555632,
+                "bytes": 16777216,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 2766200.0,
+                "median_ns": 2763700.0,
+                "min_ns": 2761200.0,
+                "p95_ns": 2765950.0,
+                "stddev_ns": 2500.0
+            },
+            {
+                "bandwidth_gb_s": 20.569346424594134,
+                "bytes": 33554432,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 4930600.0,
+                "median_ns": 4893850.0,
+                "min_ns": 4857100.0,
+                "p95_ns": 4926925.0,
+                "stddev_ns": 36750.0
+            },
+            {
+                "bandwidth_gb_s": 19.153621820638087,
+                "bytes": 67108864,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 10533800.0,
+                "median_ns": 10511150.0,
+                "min_ns": 10488500.0,
+                "p95_ns": 10531535.0,
+                "stddev_ns": 22650.0
+            },
+            {
+                "bandwidth_gb_s": 21.045618113775586,
+                "bytes": 134217728,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 19318600.0,
+                "median_ns": 19132400.0,
+                "min_ns": 18946200.0,
+                "p95_ns": 19299980.0,
+                "stddev_ns": 186200.0
+            },
+            {
+                "bandwidth_gb_s": 19.05371856888848,
+                "bytes": 268435456,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 43222100.0,
+                "median_ns": 42265050.0,
+                "min_ns": 41308000.0,
+                "p95_ns": 43126395.0,
+                "stddev_ns": 957050.0
+            },
+            {
+                "bandwidth_gb_s": 17.66534101976888,
+                "bytes": 536870912,
+                "checksum": 11264.0,
+                "kernel": "stream_triad",
+                "max_ns": 91604900.0,
+                "median_ns": 91173600.0,
+                "min_ns": 90742300.0,
+                "p95_ns": 91561770.0,
+                "stddev_ns": 431300.0
+            }
+        ]
+    }
+}
